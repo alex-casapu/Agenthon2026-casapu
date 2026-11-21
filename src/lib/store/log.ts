@@ -13,6 +13,7 @@ const ROW_SELECT: Record<string, string> = {
   claims: "SELECT * FROM claims WHERE claim_id = ?",
   claim_evidence: "SELECT * FROM claim_evidence WHERE claim_id || ':' || quote_id = ?",
   claim_events: "SELECT * FROM claim_events WHERE seq = ?",
+  ingest_events: "SELECT * FROM ingest_events WHERE seq = ?",
 };
 
 /** Hash of the stored row as it currently is. Same function on write and on verify. */

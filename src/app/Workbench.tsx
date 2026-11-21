@@ -140,10 +140,10 @@ export default function Workbench() {
     load();
   }
 
-  if (!state) return <main><p className="muted">Loading…</p></main>;
+  if (!state) return <div className="wb"><p className="muted">Loading…</p></div>;
 
   return (
-    <main>
+    <div className="wb">
       <header>
         <div>
           <h1>Company Brain · core</h1>
@@ -211,6 +211,6 @@ export default function Workbench() {
           {state.claims.length === 0 && <p className="muted">No claims yet. Load the sample data or propose one.</p>}
         </section>
       </div>
-    </main>
+    </div>
   );
 }

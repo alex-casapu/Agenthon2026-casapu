@@ -44,6 +44,9 @@ TypeScript end to end · Next.js (web is the UI) · SQLite via `better-sqlite3` 
 | Gate: quote locate, literal / resolved / interpretive checks | done |
 | Migrations with checksums; predicates registry | done |
 | Web workbench: ingest, propose through gate, approve/reject, highlight quotes | done |
+| Icon top bar (`src/app/nav.tsx`) and `/debug` god-mode GUI: table browser with FK navigation, read-only SQL console, integrity view | done |
+| Email source contract (`docs/EMAIL_CONTRACT.md`): Markdown + YAML header, folder inbox, live watcher, append-only ingest ledger, Inbox tab | done |
+| Test suite: gate, store, tamper evidence, API routes, debug lib (~95% statements) | done |
 | Entity registry | next |
 | LLM extraction with repair loop | next |
 | Policy + access labels, non-interference test | next |
@@ -67,6 +70,10 @@ src/lib/gate/      the gate: locate, numbers, dates, units
 src/lib/store/     DB, hash chain, migrations runner, verify
 src/lib/predicates.ts   predicate vocabulary (versioned)
 src/app/           Next.js UI and API routes
+src/app/debug/     god-mode debug GUI (add a page: new entry in src/app/nav.tsx)
+docs/              scenario, email contract, design docs
+examples/inbox/    example emails (`npm run inbox:example` copies them into data/inbox)
+src/lib/ingest/    email parser, folder ingest, watcher
 ```
 
 ## Run
@@ -74,6 +81,7 @@ src/app/           Next.js UI and API routes
 ```bash
 npm install
 npm run dev        # http://localhost:3000, DB at data/brain.db
-npm test
+npm test           # vitest
+npm run test:cov   # with coverage
 npm run db:reset   # wipe the local DB
 ```

@@ -104,6 +104,32 @@ function sourceView(db: DB, id: string): SourceView | undefined {
     | undefined;
 }
 
+// ---------------------------------------------------------------- ingest ledger
+
+export type IngestResult = "ingested" | "duplicate" | "conflict" | "invalid";
+
+export function recordIngestEvent(
+  db: DB,
+  e: { path: string; file_hash: string; result: IngestResult; source_id?: string | null; errors?: string[] },
+): void {
+  const info = db
+    .prepare("INSERT INTO ingest_events (path, file_hash, result, source_id, error, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .run(e.path, e.file_hash, e.result, e.source_id ?? null, e.errors?.length ? canonicalJson(e.errors) : null, new Date().toISOString());
+  recordRow(db, "ingest_events", String(info.lastInsertRowid));
+}
+
+export function ingestSeen(db: DB, path: string, fileHash: string): boolean {
+  return !!db.prepare("SELECT 1 FROM ingest_events WHERE path = ? AND file_hash = ?").get(path, fileHash);
+}
+
+export function findSourcesByExternalId(db: DB, kind: string, externalId: string) {
+  return (db.prepare("SELECT source_id, thread_id, meta FROM sources WHERE kind = ? AND external_id = ?").all(kind, externalId) as {
+    source_id: string;
+    thread_id: string | null;
+    meta: string;
+  }[]).map((r) => ({ ...r, meta: JSON.parse(r.meta) as Record<string, unknown> }));
+}
+
 // ---------------------------------------------------------------- claims
 
 export type SubmitResult =
@@ -285,7 +311,7 @@ export function verify(db: DB): VerifyReport {
       else if (now !== e.payload_hash) problems.push(`log #${e.seq}: row ${e.tbl}/${e.row_id} was altered`);
     }
   }
-  for (const tbl of ["sources", "quotes", "predicates", "claims", "claim_evidence", "claim_events", "schema_migrations"]) {
+  for (const tbl of ["sources", "quotes", "predicates", "claims", "claim_evidence", "claim_events", "ingest_events", "schema_migrations"]) {
     const n = (db.prepare(`SELECT COUNT(*) AS n FROM ${tbl}`).get() as { n: number }).n;
     if (n !== (perTable.get(tbl) ?? 0)) problems.push(`${tbl}: ${n} rows but ${perTable.get(tbl) ?? 0} log entries`);
   }

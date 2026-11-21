@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 export const sha256 = (s: string): string =>
   createHash("sha256").update(s, "utf8").digest("hex");
 
+export const sha256Bytes = (b: Uint8Array): string => createHash("sha256").update(b).digest("hex");
+
 /** Deterministic JSON: sorted keys, no whitespace, undefined dropped. */
 export function canonicalJson(v: unknown): string {
   if (v === null || typeof v !== "object") return JSON.stringify(v) ?? "null";
