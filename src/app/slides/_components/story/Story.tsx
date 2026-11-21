@@ -173,7 +173,7 @@ export function TechIntroStory() {
   );
 }
 
-function Left({ eyebrow, title, body }: { eyebrow: string; title: React.ReactNode; body?: string }) {
+export function Left({ eyebrow, title, body }: { eyebrow: string; title: React.ReactNode; body?: string }) {
   return (
     <div>
       <div className="sl-eyebrow">{eyebrow}</div>
