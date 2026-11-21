@@ -202,6 +202,16 @@ describe("when a claim behind a notice is rejected", () => {
     expect(st.segment_withdrawn).toEqual([true, false]);
   });
 
+  it("a statement leaning on a rejected claim is withdrawn even when other claims also back it", async () => {
+    const w = world();
+    const r2 = submitClaim(w.db, { predicate_id: "spot_price", fields: { item: "ent:durum_semolina", amount: 502, currency: "EUR", per: "t" }, evidence: [{ source_id: w.source, quote: "salito a 502 €/t" }] }, "agent:test", { trust: true });
+    const second = (r2 as { claim_id: string }).claim_id;
+    const one = (req: { prompt: string }) => [{ text: "La semola è a 502 €/t.", cites: [...req.prompt.matchAll(/\[(N\d+)\]/g)].map((m) => m[1]) }];
+    await considerClaims(w.db, w.source, [w.claim, second], opts(scriptedLlm([tell(one)]).llm, [luca]));
+    reviewClaim(w.db, second, "rejected", "human:marta");
+    expect(noticeState(listNotices(w.db, "luca")[0], views(w.db))).toMatchObject({ state: "cancelled", segment_withdrawn: [true] });
+  });
+
   it("a dismissed notice can be dismissed again after it is cancelled", async () => {
     const w = world();
     await considerClaims(w.db, w.source, [w.claim], opts(scriptedLlm([tell((r) => [{ text: "La semola è a 502 €/t.", cites: [cites(r.prompt, "N")] }])]).llm, [luca]));

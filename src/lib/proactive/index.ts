@@ -226,7 +226,7 @@ export interface NoticeState {
   /** ok: nothing it rests on was withdrawn. updated: some statements lost their basis. cancelled: all of them did. */
   state: "ok" | "updated" | "cancelled";
   withdrawn: Withdrawn[];
-  /** Per statement: true when every claim it cites was withdrawn. */
+  /** Per statement: true when any claim it cites was withdrawn. */
   segment_withdrawn: boolean[];
   /** When the latest withdrawal happened, if any. */
   changed_at: string | null;
@@ -248,7 +248,8 @@ export function noticeState(notice: Pick<NoticeRow, "segments">, views: Map<stri
     const ev = [...c.history].reverse().find((h) => WITHDRAWN.has(h.type));
     gone.set(id, { claim_id: id, sentence: c.sentence, status: c.status, by: ev?.actor ?? "unknown", reason: ev?.reason ?? null, at: ev?.created_at ?? "" });
   }
-  const segment_withdrawn = segs.map((s) => s.cites.length > 0 && s.cites.every((id) => gone.has(id)));
+  // a statement that leans on any withdrawn claim is no longer verified, even if other claims also back it
+  const segment_withdrawn = segs.map((s) => s.cites.some((id) => gone.has(id)));
   const n = segment_withdrawn.filter(Boolean).length;
   const withdrawn = [...gone.values()];
   return {

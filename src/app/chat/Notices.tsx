@@ -60,13 +60,13 @@ export function NoticeFeed({ notices, onDismiss, onAsk }: { notices: Notice[]; o
           </div>
           {n.state !== "ok" && (
             <div className="withdrawn">
-              <b>{n.state === "cancelled" ? "No longer holds." : "Partly withdrawn."}</b>{" "}
+              <b>{n.state === "cancelled" ? "No longer holds: it relied on rejected claims." : "Partly withdrawn."}</b>{" "}
               {n.withdrawn.map((w) => (
                 <span key={w.claim_id}>
                   {w.by} {w.status === "retracted" ? "retracted" : "rejected"} “{w.sentence}”{w.reason ? ` (${w.reason})` : ""}.{" "}
                 </span>
               ))}
-              {n.state === "cancelled" ? "Disregard it." : "Struck statements no longer have a basis."}
+              {n.state === "cancelled" ? "Disregard it." : "Struck statements relied on a rejected claim."}
             </div>
           )}
           <footer>
