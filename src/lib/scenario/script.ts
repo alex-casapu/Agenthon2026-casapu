@@ -6,7 +6,7 @@
  */
 export const SCRIPT: Record<string, string[]> = {
   intro: [
-    "Good morning, everyone. We're [your names], and this is Company Brain.\n\nWe built it on the real business processes of a company that makes pasta: suppliers, contracts, stock, purchasing. So that's the story you're going to see.",
+    "Good morning, everyone. We're [your names], and this is Company Brain.\n\nIt's a technology, not a pasta product. To show it working, we use a simulated company that makes pasta: that's the scenario you'll see.",
   ],
   title: [
     "Let's start simple. Pasta has two main ingredients: water, and semolina.",

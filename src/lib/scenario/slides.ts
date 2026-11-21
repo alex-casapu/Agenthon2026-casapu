@@ -24,56 +24,44 @@ export interface Slide {
  * (engine, maths, extras): reached with B or the menu, never by walking forward from the end.
  */
 export const SLIDES: Slide[] = [
+  // ---- glue: the problem, in 30 seconds ---------------------------------------------------------
   { slug: "intro", title: "Company Brain", act: "Intro", steps: 0, bg: "wheat",
-    notes: ["A calm start. Say who you are, and that the story is built on the processes of a pasta company. ~20 s."] },
-  // ---- the problem ------------------------------------------------------------------------------
-  { slug: "title", title: "Two ingredients", act: "I · The problem", steps: 1, bg: "wheat",
-    notes: ["Don't start with the product. Pasta: water and semolina. Pause. Then the +18%.", "~15 s."] },
-  { slug: "morning", title: "Parma, 08:58", act: "I · The problem", steps: 1, bg: "mill",
-    notes: ["Nine days left. Then the three facts at once. ~10 s."] },
-  { slug: "company", title: "Four rooms", act: "I · The problem", steps: 7,
-    notes: ["Fly into finance, production, procurement. Then the two popular fixes: a meeting, a chatbot on the drive. Then: Nope. ~40 s."] },
-  // ---- the reveal -------------------------------------------------------------------------------
+    notes: ["Who you are. Company Brain is a technology; the scenario is a simulated pasta company. ~15 s."] },
+  { slug: "company", title: "Rooms that don't talk", act: "I · The problem", steps: 3,
+    notes: ["Rooms that don't talk. The usual fixes: a meeting, a chatbot on the drive. Nope. ~25 s."] },
   { slug: "reveal", title: "Company Brain", act: "II · The reveal", steps: 1,
-    notes: ["What if the pieces found each other? Then the name and the line. ~10 s."] },
-  // ---- the proof (live) -------------------------------------------------------------------------
-  { slug: "channel", title: "It speaks first", act: "III · The proof", demo: true, event: "report",
-    notes: ["Press E. Nobody asked. Point at: sources, 'nothing has been executed'. ~15 s."] },
-  { slug: "memory", title: "People curate the memory", act: "III · The proof", demo: true,
-    notes: ["Approve the price and the cost, reject the rumour. ~15 s."] },
-  { slug: "who", title: "It knows who's asking", act: "III · The proof", demo: true,
-    notes: ["Same question, Luca and Sara. Luca: price and source. Sara: 'I don't know'. ~15 s."] },
-  { slug: "correction", title: "Then the world changes", act: "III · The proof", demo: true, event: "correction",
-    notes: ["Press E. Nothing is rewritten; what rested on the old evidence is flagged. ~12 s."] },
-  { slug: "approvals", title: "It only proposes", act: "III · The proof", demo: true,
-    notes: ["Approve the updated conclusions and the action: only now does PO-9120 exist. ~12 s."] },
-  { slug: "why", title: "Why did we buy?", act: "III · The proof", demo: true,
-    notes: ["One click: decision, approver, evidence, superseded versions. ~8 s."] },
-  { slug: "rooms", title: "One brain, four rooms", act: "III · The proof", steps: 4,
-    notes: ["The same brain in the rooms, with one voice: the Brain's. Input first, voice on the click. ~20 s."] },
-  // ---- the close --------------------------------------------------------------------------------
-  { slug: "impact", title: "What it is worth", act: "IV · What it is worth", steps: 1,
-    notes: ["Numbers from the demo you just saw. Then: every company has this problem. ~12 s."] },
-  { slug: "extract", title: "Facts, not summaries", act: "V · Under the hood", steps: 2, notes: ["Atomic claims tied to verbatim quotes. Literal, derived, interpretive."] },
-  { slug: "access", title: "Access before the model", act: "V · Under the hood", steps: 2, notes: ["Policy before any model call. For Sara's agent the rest does not exist."] },
-  { slug: "recompute", title: "Distrust a source", act: "V · Under the hood", steps: 2, notes: ["A pure function of ledger and policy: only dependents recompute."] },
-  { slug: "finale", title: "The colleague who knows", act: "VI · The close", steps: 1, bg: "pasta",
-    notes: ["Back to pasta. Close slowly. ~10 s."] },
+    notes: ["We didn't add a door; we gave the company a brain. Then straight into the app. ~8 s."] },
+  // ---- the real app, five actions ---------------------------------------------------------------
+  { slug: "demo", title: "Live, on the real app", act: "III · Live", steps: 4,
+    notes: ["The real web app, in the simulated world. 1 alert, 2 reject, 3 no access, 4 with access and citations, 5 unknown. ~20 s each."] },
+  // ---- the technically interesting ideas (your brother) -----------------------------------------
+  { slug: "extract", title: "Facts, not summaries", act: "IV · The ideas", steps: 2,
+    notes: ["Atomic claims tied to verbatim quotes, three tiers of trust, a gate made of plain code."] },
+  { slug: "access", title: "Access before the model", act: "IV · The ideas", steps: 2,
+    notes: ["Policy before any model call. A claim inherits the strictest label. For Sara's agent the rest does not exist."] },
+  { slug: "recompute", title: "Distrust a source", act: "IV · The ideas", steps: 2,
+    notes: ["Derived state is a pure function of the ledger and the policy: distrust a source, only dependents recompute."] },
+  { slug: "finale", title: "The colleague who knows", act: "V · The close", steps: 1, bg: "pasta",
+    notes: ["Close slowly."] },
 
   // ======================================== BACKUP ========================================
-  { slug: "world", title: "The world, this morning", act: "Backup", demo: true, backup: true,
-    notes: ["The 'before' panel: no order exists. Stock covers 9 days."] },
-  { slug: "math", title: "Nobody had done the maths", act: "Backup", steps: 3, backup: true,
-    notes: ["Where 123,200 comes from: 77 × 1,600. Then the action: €96k saved, 9 → 31 days."] },
-  { slug: "ask", title: "Ask it anything", act: "Backup", demo: true, backup: true,
-    notes: ["Cites, and admits gaps: Canada rejected, Turkey unknown."] },
-  { slug: "how", title: "Under the hood", act: "Backup", steps: 3, backup: true,
-    notes: ["HANDOVER: your brother speaks. The model proposes, code verifies, a person decides, the ledger remembers. Press B for the details if asked."] },
-  { slug: "tech", title: "How do you trust it?", act: "Backup · The engine", steps: 1, bg: "racks", backup: true,
-    notes: ["You don't. You verify."] },
-  { slug: "ingest", title: "How a source enters", act: "Backup · The engine", steps: 2, backup: true, notes: ["A file in a folder. It only ever appends."] },
   { slug: "gate", title: "The gate", act: "Backup · The engine", steps: 2, backup: true, notes: ["Plain code, no model. A wrong value bounces back."] },
   { slug: "ledger", title: "The ledger", act: "Backup · The engine", steps: 2, backup: true, notes: ["Append-only, one hash chain, verify()."] },
+  { slug: "ingest", title: "How a source enters", act: "Backup · The engine", steps: 2, backup: true, notes: ["A file in a folder. It only ever appends."] },
+  { slug: "how", title: "Under the hood", act: "Backup", steps: 3, backup: true, notes: ["The pipeline in one slide."] },
+  { slug: "tech", title: "How do you trust it?", act: "Backup · The engine", steps: 1, bg: "racks", backup: true, notes: ["You don't. You verify."] },
+  // The earlier scripted mock demo (engine-driven). Kept for reference; the talk uses the real app.
+  { slug: "channel", title: "It speaks first (mock)", act: "Backup · mock", demo: true, event: "report", backup: true, notes: ["Mock demo."] },
+  { slug: "memory", title: "People curate (mock)", act: "Backup · mock", demo: true, backup: true, notes: ["Mock demo."] },
+  { slug: "who", title: "Who's asking (mock)", act: "Backup · mock", demo: true, backup: true, notes: ["Mock demo."] },
+  { slug: "correction", title: "Correction (mock)", act: "Backup · mock", demo: true, event: "correction", backup: true, notes: ["Mock demo."] },
+  { slug: "approvals", title: "Only proposes (mock)", act: "Backup · mock", demo: true, backup: true, notes: ["Mock demo."] },
+  { slug: "why", title: "Why did we buy (mock)", act: "Backup · mock", demo: true, backup: true, notes: ["Mock demo."] },
+  { slug: "ask", title: "Ask it anything (mock)", act: "Backup · mock", demo: true, backup: true, notes: ["Mock demo."] },
+  { slug: "world", title: "The world (mock)", act: "Backup · mock", demo: true, backup: true, notes: ["Mock demo."] },
+  { slug: "math", title: "The maths", act: "Backup", steps: 3, backup: true, notes: ["Where the numbers come from."] },
+  { slug: "rooms", title: "Rooms, with the Brain's voice", act: "Backup", steps: 4, backup: true, notes: ["The voice scene (ElevenLabs), if there is time."] },
+  { slug: "impact", title: "What it is worth", act: "Backup", steps: 1, backup: true, notes: ["The numbers, from the mock story."] },
 ];
 
 export const slideIndex = (slug: string) => SLIDES.findIndex((s) => s.slug === slug);

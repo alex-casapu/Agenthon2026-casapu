@@ -113,3 +113,9 @@ table.grid { border-collapse: collapse; width: 100%; font-family: var(--font-gei
 .who select { width: auto; padding: 3px 8px; }
 .banner { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 10px 0 2px; }
 .cl .row button.ok, .cl .row button.bad { padding: 3px 12px; }
+
+/* ---- demo controls (claims page, ?demo=1) ---- */
+.stagepanel { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 12px; margin-bottom: 8px; border: 1px dashed var(--accent); border-radius: 8px; background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.stagepanel .label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+.stagepanel button.done { color: var(--ok); border-color: var(--ok); }
+.stagepanel em { font-style: normal; opacity: .7; }

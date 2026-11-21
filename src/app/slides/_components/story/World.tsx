@@ -221,20 +221,15 @@ export function Caption({ lines }: { lines: [string, string, boolean?][] }) {
   );
 }
 
-const BEFORE_FOCUS: (string | null)[] = [null, "finance", "production", "procurement", null, null, null, null];
 const AFTER_FOCUS: (string | null)[] = [null, "procurement", "procurement", "finance", "finance"];
 
 export function CompanyStory() {
   const step = useStep();
   return (
     <div className="wd-stage">
-      <World mode="before" focus={BEFORE_FOCUS[step] ?? null} cut={step === 4} step={step} fix={step === 5 ? "meeting" : step === 6 ? "chat" : step >= 7 ? "nope" : null} />
+      <World mode="before" focus={null} cut={step === 0} step={step} fix={step === 1 ? "meeting" : step === 2 ? "chat" : step >= 3 ? "nope" : null} />
       <Caption lines={[
-        ["Every company is a graph.", "Each dot is a room where something is known."],
-        ["Finance holds the contract.", "412 €/t, locked until March."],
-        ["Production holds the clock.", "9 days of semolina in stock."],
-        ["Procurement holds an offer.", "3,000 t at 470 €/t. It expires on the 28th."],
-        ["Four rooms. No door between them.", "Nobody has done the maths."],
+        ["Every company is rooms that don't talk.", "Finance holds the contract. Production, the stock. Procurement, an offer."],
         ["The usual fix: a door.", "A weekly meeting. Everyone nods. Nothing is decided."],
         ["The popular fix: a chatbot on the shared drive.", "It reads everything, trusts everything, and never says it is guessing."],
         ["Nope.", "Nobody wants another meeting. Nobody trusts a bot that never says “I don't know”.", true],

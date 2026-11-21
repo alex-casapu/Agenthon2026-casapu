@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { ClaimView, EvidenceView } from "@/lib/claims-view";
 import { Highlighted } from "../components/Highlighted";
 import { PrincipalSwitcher, usePrincipalId } from "../components/principal";
+import StagePanel from "./StagePanel";
 
 type GroupBy = "none" | "predicate" | "source";
 type Sort = "newest" | "oldest" | "predicate" | "status";
@@ -99,7 +100,7 @@ function Card({ c, curate, onReview }: { c: ClaimView; curate: boolean; onReview
   );
 }
 
-export default function ClaimsView() {
+export default function ClaimsView({ demo = false }: { demo?: boolean }) {
   const pid = usePrincipalId();
   const [data, setData] = useState<{ key: string; payload: Payload } | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -169,6 +170,7 @@ export default function ClaimsView() {
 
   return (
     <div className="claimspage">
+      {demo && <StagePanel />}
       <div className="banner">
         <PrincipalSwitcher />
         {principal ? (
