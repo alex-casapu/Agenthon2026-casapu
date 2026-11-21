@@ -41,6 +41,16 @@ export const NAV_LEFT: NavItem[] = [
     icon: svg(<path d="M21 11.5a8.4 8.4 0 0 1-12.2 7.5L3 20.5l1.6-5.3A8.4 8.4 0 1 1 21 11.5z" />),
   },
   {
+    href: "/sources",
+    label: "New source · simulate an arrival",
+    icon: svg(
+      <>
+        <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+        <path d="M14 3v5h5M12 11v6M9 14h6" />
+      </>,
+    ),
+  },
+  {
     href: "/presenter",
     label: "Presenter controls",
     icon: svg(<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />),

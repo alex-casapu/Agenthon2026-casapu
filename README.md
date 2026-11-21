@@ -110,6 +110,7 @@ npm run eval:extract   # live extraction eval against fixtures/extraction-truth.
 
 ## Decisions worth knowing
 
+- **New sources can be simulated live.** The `/sources` page turns a short request into drafted emails, articles or documents; code writes the headers, the real parser checks them, and nothing is written until a person accepts the preview. Accepted files land in the source folders and arrive like any other.
 - **Claims are trusted by default.** A claim that passes the gate is approved on admission by the policy (recorded as `policy:trust-by-default`, never as a person) and is usable at once. Curation means rejecting what is wrong; a rejection sticks even if the same fact is read again. `BRAIN_TRUST=off` restores approve-first.
 - **Entities are discovered, never approved.** Recognising a supplier, product or person is not an action. Grounding is mechanical (quote or header information); a wrong guess costs a duplicate name, not a wrong decision.
 - **People and roles are configuration.** Each world defines its (at most three) users; the app has no built-in cast.
