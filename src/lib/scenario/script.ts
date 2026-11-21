@@ -15,6 +15,10 @@ export const SCRIPT: Record<string, string[]> = {
     "[Luca asks the same.] Same question, from someone who may know. The answer, and every citation behind it.",
     "[Marta asks: \"What did we hear about the Canadian harvest?\"] And a question it can't answer. It was rejected, so: \"I don't know.\"",
   ],
+  inputs: [
+    "The Brain reads what a company already has: emails, news, documents. Offers and replies; market reports; contracts, stock exports, production plans.",
+    "Each one arrives as a file. It says who may see it, and how far to trust it. And nothing is ever edited: a correction is a new source.",
+  ],
   title: [
     "Let's start simple. Pasta has two main ingredients: water, and semolina.",
     "Imagine it's the twenty-first of November, and the price of one of them has just gone up by eighteen percent.",

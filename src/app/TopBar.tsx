@@ -2,34 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SLIDES } from "@/lib/scenario/slides";
 import { NAV_LEFT, SLIDE_ICONS } from "./nav";
 
-/** The pages the live demo uses. The others (debug, presenter, backup slides) stay reachable by URL or the B key. */
-const SHOWN = new Set(["/claims", "/chat", "/sources"]);
-
+/**
+ * Every page of the app stays in the header. The slides do not get an icon each any more:
+ * they are walked with the arrow keys, so one entry opens the talk (backup slides: key B).
+ */
 export default function TopBar() {
   const path = usePathname();
-  const talk = SLIDES.filter((s) => !s.backup);
   return (
     <nav className="topbar" aria-label="Views">
-      {NAV_LEFT.filter((n) => SHOWN.has(n.href)).map((n) => (
+      {NAV_LEFT.map((n) => (
         <Link key={n.href} href={n.href} title={n.label} aria-label={n.label} className={path.startsWith(n.href) ? "active" : ""}>
           {n.icon}
         </Link>
       ))}
       <span className="spacer" />
-      <span className="topbar-slides" role="group" aria-label="Presentation">
-        {talk.map((s, i) => {
-          const href = `/slides/${s.slug}`;
-          return (
-            <Link key={s.slug} href={href} title={`${i + 1}. ${s.title}`} aria-label={`Slide ${i + 1}: ${s.title}`} className={path === href ? "active" : ""}>
-              {SLIDE_ICONS[s.slug] ?? <span aria-hidden style={{ fontSize: 9 }}>●</span>}
-              <span className="num">{i + 1}</span>
-            </Link>
-          );
-        })}
-      </span>
+      <Link href="/slides/intro" title="The talk (arrow keys; B for backup slides)" aria-label="The talk" className={path.startsWith("/slides") ? "active" : ""}>
+        {SLIDE_ICONS.title ?? <span aria-hidden>▶</span>}
+      </Link>
     </nav>
   );
 }

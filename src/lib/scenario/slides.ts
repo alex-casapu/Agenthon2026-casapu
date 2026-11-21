@@ -28,6 +28,8 @@ export const SLIDES: Slide[] = [
   { slug: "intro", title: "Company Brain", act: "Intro", steps: 0, bg: "wheat",
     notes: ["Who you are, the tagline, and that the demo runs on a simulated pasta company. ~10 s. The problem is defined by the challenge: no problem section."] },
   // ---- the real app, five actions ---------------------------------------------------------------
+  { slug: "inputs", title: "Where the information comes from", act: "Sources", steps: 1,
+    notes: ["Emails, news, documents: what a company already has. Each is a file with who may see it and how far to trust it. ~15 s."] },
   { slug: "demo", title: "Live, on the real app", act: "Live", steps: 4,
     notes: ["The real web app, in the simulated world. 1 alert, 2 reject, 3 no access, 4 with access and citations, 5 unknown. ~20 s each."] },
   // ---- the technically interesting ideas (your brother) -----------------------------------------
