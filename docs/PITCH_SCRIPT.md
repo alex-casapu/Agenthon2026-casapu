@@ -4,19 +4,15 @@ Everything you say, in order. **[Square brackets]** are stage directions (what t
 
 To fill in: [your names].
 
-## 1. Company Brain · ~26 words
+## 1. Company Brain · ~65 words
 
-Good morning. We're [your names], and this is Company Brain: the colleague who knows, and speaks first.
+**▸ 1**  Good morning. We're [your names], and this is Company Brain: the colleague who knows, and speaks first. We'll show it live, on a simulated company that makes pasta.
 
-We'll show it live, on a simulated company that makes pasta.
+**▸ 2**  It reads what a company already has: emails, news, documents. Each one is a file, and each says who may see it and how far to trust it.
 
-## 2. Where the information comes from · ~50 words
+**▸ 3**  What comes out are claims, each tied to a verbatim quote. [Straight into the demo.]
 
-**▸ 1**  The Brain reads what a company already has: emails, news, documents. Offers and replies; market reports; contracts, stock exports, production plans.
-
-**▸ 2**  Each one arrives as a file. It says who may see it, and how far to trust it. And nothing is ever edited: a correction is a new source.
-
-## 3. Live, on the real app · LIVE on the real app · ~82 words
+## 2. Live, on the real app · LIVE on the real app · ~82 words
 
 **▸ 1**  [New source: describe a piece of information, review the draft, let it arrive.] First, we add something to the simulated world by hand: a message arrives. Nobody asked: the Brain reads it and proposes what it says.
 
@@ -28,7 +24,7 @@ We'll show it live, on a simulated company that makes pasta.
 
 **▸ 5**  [Marta asks: "What did we hear about the Canadian harvest?"] And a question it can't answer. It was rejected, so: "I don't know."
 
-## 4. Facts, not summaries · YOUR BROTHER · ~81 words
+## 3. Facts, not summaries · YOUR BROTHER · ~81 words
 
 **▸ 1**  [Brother speaks.] Thanks. Let me show you what's under the hood. The model reads a document, and it doesn't summarise: it proposes atomic facts.
 
@@ -36,7 +32,7 @@ We'll show it live, on a simulated company that makes pasta.
 
 **▸ 3**  Three tiers of trust. Literal values must be readable in the quote. Derived ones, like dates and units, are recomputed by code. Interpretive ones are judged by a person.
 
-## 5. Access before the model · YOUR BROTHER · ~42 words
+## 4. Access before the model · YOUR BROTHER · ~42 words
 
 **▸ 1**  Access is decided before the model. A claim inherits the strictest label of the evidence under it. Marta sees everything.
 
@@ -44,7 +40,7 @@ We'll show it live, on a simulated company that makes pasta.
 
 **▸ 3**  Sara sees only public. For her agent the rest of the graph doesn't exist. Not hidden: absent.
 
-## 6. Distrust a source · YOUR BROTHER · ~36 words
+## 5. Distrust a source · YOUR BROTHER · ~36 words
 
 **▸ 1**  And every fact has a parent.
 
@@ -52,7 +48,7 @@ We'll show it live, on a simulated company that makes pasta.
 
 **▸ 3**  Five conclusions and one action to review. Three nodes untouched. The blast radius is visible. [Hand back.]
 
-## 7. The colleague who knows · ~17 words
+## 6. The colleague who knows · ~17 words
 
 **▸ 1**  A company is what it remembers.
 
@@ -62,4 +58,4 @@ Thank you.
 
 ---
 
-Total: **334 words**, about **2.4 min** of speech at 140 words a minute, plus the clicks in the live demo.
+Total: **323 words**, about **2.3 min** of speech at 140 words a minute, plus the clicks in the live demo.

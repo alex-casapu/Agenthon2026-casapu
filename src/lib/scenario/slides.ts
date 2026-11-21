@@ -25,11 +25,9 @@ export interface Slide {
  */
 export const SLIDES: Slide[] = [
   // ---- glue ---------------------------------------------------------
-  { slug: "intro", title: "Company Brain", act: "Intro", steps: 0, bg: "wheat",
-    notes: ["Who you are, the tagline, and that the demo runs on a simulated pasta company. ~10 s. The problem is defined by the challenge: no problem section."] },
+  { slug: "intro", title: "Company Brain", act: "Intro", steps: 2, bg: "wheat",
+    notes: ["Name, tagline. Then the sources fly in: email, news, documents, each tagged with who may see it and how far to trust it. Then claims come out, tied to a quote. ~20 s. Straight into the demo."] },
   // ---- the real app, five actions ---------------------------------------------------------------
-  { slug: "inputs", title: "Where the information comes from", act: "Sources", steps: 1,
-    notes: ["Emails, news, documents: what a company already has. Each is a file with who may see it and how far to trust it. ~15 s."] },
   { slug: "demo", title: "Live, on the real app", act: "Live", steps: 4,
     notes: ["The real web app, in the simulated world. 1 add a piece of information by hand (New source), 2 reject it, 3 no access, 4 with access and citations, 5 unknown. ~20 s each."] },
   // ---- the technically interesting ideas (your brother) -----------------------------------------
@@ -43,6 +41,8 @@ export const SLIDES: Slide[] = [
     notes: ["Close slowly."] },
 
   // ======================================== BACKUP ========================================
+  { slug: "inputs", title: "Where the information comes from", act: "Backup", steps: 1, backup: true,
+    notes: ["Emails, news, documents: what a company already has. Each is a file with who may see it and how far to trust it. ~15 s."] },
   { slug: "company", title: "Rooms that don't talk", act: "Backup · problem", steps: 3, backup: true,
     notes: ["Rooms that don't talk. The usual fixes: a meeting, a chatbot on the drive. Nope. ~25 s."] },
   { slug: "reveal", title: "Company Brain", act: "Backup · problem", steps: 1, backup: true,

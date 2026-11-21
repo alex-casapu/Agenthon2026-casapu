@@ -6,7 +6,9 @@
  */
 export const SCRIPT: Record<string, string[]> = {
   intro: [
-    "Good morning. We're [your names], and this is Company Brain: the colleague who knows, and speaks first.\n\nWe'll show it live, on a simulated company that makes pasta.",
+    "Good morning. We're [your names], and this is Company Brain: the colleague who knows, and speaks first. We'll show it live, on a simulated company that makes pasta.",
+    "It reads what a company already has: emails, news, documents. Each one is a file, and each says who may see it and how far to trust it.",
+    "What comes out are claims, each tied to a verbatim quote. [Straight into the demo.]",
   ],
   demo: [
     "[New source: describe a piece of information, review the draft, let it arrive.] First, we add something to the simulated world by hand: a message arrives. Nobody asked: the Brain reads it and proposes what it says.",
