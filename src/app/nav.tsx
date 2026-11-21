@@ -12,8 +12,8 @@ const svg = (children: ReactNode) => (
   </svg>
 );
 
-/** Add a page = add an entry here. Icons are inline SVG (Lucide-style paths). */
-export const NAV: NavItem[] = [
+/** Left of the bar: tools for us. Add a page = add an entry here. Icons are inline SVG (Lucide-style paths). */
+export const NAV_LEFT: NavItem[] = [
   {
     href: "/debug",
     label: "Debug · god mode",
@@ -35,4 +35,62 @@ export const NAV: NavItem[] = [
       </>,
     ),
   },
+  {
+    href: "/presenter",
+    label: "Presenter controls",
+    icon: svg(<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />),
+  },
 ];
+
+/** Right of the bar: one icon per slide, keyed by slug (order and titles live in lib/scenario/slides.ts). */
+export const SLIDE_ICONS: Record<string, ReactNode> = {
+  title: svg(<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />),
+  world: svg(
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18" />
+    </>,
+  ),
+  channel: svg(<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />),
+  memory: svg(
+    <>
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+      <path d="M5.5 5h13l3.5 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z" />
+    </>,
+  ),
+  ask: svg(
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" />
+    </>,
+  ),
+  who: svg(
+    <>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+      <circle cx="10" cy="7" r="4" />
+      <path d="M21 21v-2a4 4 0 0 0-3-3.9" />
+      <path d="M16 3.1a4 4 0 0 1 0 7.8" />
+    </>,
+  ),
+  correction: svg(
+    <>
+      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+      <path d="M3 21v-5h5" />
+    </>,
+  ),
+  approvals: svg(
+    <>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="M9 12l2 2 4-4" />
+    </>,
+  ),
+  why: svg(
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>,
+  ),
+};
