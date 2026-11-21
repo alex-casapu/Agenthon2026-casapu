@@ -1,5 +1,7 @@
 # Demo runbook: the 3-minute talk on the real app
 
+> **Status: draft.** Written against the Pastaco examples, before `demo/brain.db` (`npm run demo:load`) and the proactive Heads-up landed upstream. The slide beats and the ▶ strip still have to be rehearsed against the committed demo database. Extraction and chat need a logged-in `claude` CLI in the server's environment.
+
 The talk (`/slides/intro`) is glue between pieces; the middle is the real app inside the deck (`/slides/demo`), five actions on `/claims?demo=1` and `/chat`.
 
 ## Before going on stage (once)
