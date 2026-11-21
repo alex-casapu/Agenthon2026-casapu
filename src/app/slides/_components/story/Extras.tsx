@@ -7,7 +7,7 @@ import { Left } from "./Story";
 
 const IDEAS: [string, string, string, string][] = [
   ["01", "The model proposes. Code disposes.", "Every claim carries a verbatim quote. The database itself refuses a quote that is not a slice of its source, and a plain-code gate re-checks every literal value against it.", "gate · DB trigger"],
-  ["02", "Immutable memory.", "Append-only tables, status as events, one chain over every row. verify() re-reads the quotes and re-runs the gate on all claims: one altered row breaks the rest.", "verify()"],
+  ["02", "A memory with an immutable hash chain.", "Append-only tables, status as events, one chain over every row. verify() re-reads the quotes and re-runs the gate on all claims: one altered row breaks the rest.", "verify()"],
   ["03", "Access before the model.", "A claim’s labels are the union of its sources’. Whoever may not see it never has it in the prompt, and the answer is always the same: “I don’t know”. A non-interference test pins it down.", "policy · labels"],
   ["04", "Answers on a leash.", "Every sentence cites claims, every citation must exist and be visible to the asker, every figure must appear in what it cites. One repair round, then “I don’t know”.", "answer verifier"],
   ["05", "Entities found, not typed.", "Suppliers, products and people are admitted by the system when a quote or the source header grounds them. Ids are derived by code, so the same name is the same thing.", "entity registry"],
