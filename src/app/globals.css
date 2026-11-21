@@ -40,6 +40,10 @@ input, select, textarea { font: inherit; padding: 6px 8px; border-radius: 8px; b
 .topbar a { display: grid; place-items: center; width: 26px; height: 24px; border-radius: 6px; color: var(--muted); }
 .topbar a:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 8%, transparent); }
 .topbar a.active { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.topbar .spacer { flex: 1; }
+.topbar-slides { display: flex; gap: 2px; }
+.topbar-slides a { position: relative; width: 30px; }
+.topbar-slides .num { position: absolute; right: 1px; bottom: -1px; font-size: 8px; line-height: 1; font-weight: 600; opacity: .7; }
 
 /* ---- debug ---- */
 .debug { padding: 8px 12px 24px; }
