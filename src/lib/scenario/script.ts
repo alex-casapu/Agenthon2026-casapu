@@ -8,6 +8,13 @@ export const SCRIPT: Record<string, string[]> = {
   intro: [
     "Good morning, everyone. We're [your names], and this is Company Brain.\n\nIt's a technology, not a pasta product. To show it working, we use a simulated company that makes pasta: that's the scenario you'll see.",
   ],
+  demo: [
+    "[On the page: press ▶ Alert.] Something just arrived. Nobody asked: the Brain read it and proposed what it says.",
+    "[As Marta: Reject the claim from the fair.] It was a rumour. Marta rejects it: nothing becomes memory until a person says so.",
+    "[Sara asks: \"What is our framework contract price?\"] Sara asks about the contract. \"I don't know.\" Her agent only knows what Sara may know.",
+    "[Luca asks the same.] Same question, from someone who may know. The answer, and every citation behind it.",
+    "[Marta asks: \"What did we hear about the Canadian harvest?\"] And a question it can't answer. It was rejected, so: \"I don't know.\"",
+  ],
   title: [
     "Let's start simple. Pasta has two main ingredients: water, and semolina.",
     "Imagine it's the twenty-first of November, and the price of one of them has just gone up by eighteen percent.",
@@ -17,12 +24,8 @@ export const SCRIPT: Record<string, string[]> = {
     "Sixty percent is covered by a contract, at four-twelve a tonne. The rest is bought at the market price.",
   ],
   company: [
-    "Think of the company as a graph: each dot is a room where something is known.",
-    "Finance holds the contract.",
-    "Production holds the stock: nine days.",
-    "Procurement holds an offer that expires on the twenty-eighth.",
-    "Each room has a piece. There's no door between them, so nobody has put the numbers together.",
-    "So what does a company usually do about that? It adds a door. A weekly meeting.\n\n[Small smile.] Everyone nods. Nothing is decided.",
+    "Every company is rooms that don't talk. Finance holds the contract, production the stock, procurement an offer.",
+    "So what does a company usually do? It adds a door. A weekly meeting.\n\n[Small smile.] Everyone nods. Nothing is decided.",
     "Or, these days: a shared drive with a chatbot on top. It reads everything, trusts everything, and never tells you when it's guessing.",
     "[Beat.] Nope.\n\nNobody wants another meeting. And nobody trusts a bot that never says \"I don't know.\"",
   ],

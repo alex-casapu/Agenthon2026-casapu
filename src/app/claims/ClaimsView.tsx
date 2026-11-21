@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import type { ClaimView, EvidenceView } from "@/lib/claims-view";
 import { Highlighted } from "../components/Highlighted";
 import { PrincipalSwitcher, usePrincipalId } from "../components/principal";
@@ -103,8 +103,10 @@ function Card({ c, curate, onReview }: { c: ClaimView; curate: boolean; onReview
   );
 }
 
-export default function ClaimsView({ demo = false }: { demo?: boolean }) {
+export default function ClaimsView() {
   const pid = usePrincipalId();
+  // ?demo=1 shows the presenter's controls. Read in the browser only, so the page needs no runtime data on the server.
+  const demo = useSyncExternalStore(() => () => {}, () => new URLSearchParams(window.location.search).has("demo"), () => false);
   const [data, setData] = useState<{ key: string; payload: Payload } | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
