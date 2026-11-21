@@ -108,7 +108,7 @@ export default function SourcesView() {
   }
 
   return (
-    <div className="src">
+    <div className="newsrc">
       <aside className="compose">
         <div className="brand">
           <span className="brand-mark"><BrainMark size={20} /></span>

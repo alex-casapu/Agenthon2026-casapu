@@ -19,7 +19,7 @@ import { recordRow, type DB } from "../store/log";
  * are never told about it: they already have it. That rule is code, not a request to the model.
  */
 
-export const PROACTIVE_VERSION = "proactive-v3";
+export const PROACTIVE_VERSION = "proactive-v4";
 
 /** BRAIN_PROACTIVE=off switches it off (saves subscription quota while developing). */
 export const proactiveEnabled = (): boolean => process.env.BRAIN_PROACTIVE !== "off";
@@ -88,7 +88,7 @@ Speak only when ALL of these hold:
 - You have not already told them (see what you told them recently, oldest first): do not repeat a notice, and speak again on the same subject only when something has actually changed since.
 Silence is the default. When in doubt, do not notify. Most new claims should produce no notice.
 
-Relate the news to what the person has. When new market information or a deadline bears on a contract, offer or commitment in their knowledge base, say how: restate the figures side by side (for example the new market price next to every price they already have secured, in contracts and offers) and, when an action follows, suggest it: for instance to buy under the cheapest existing contract or offer instead of at the new market price (name which one and its price), or to decide before an offer expires. Put the comparison in the figures; never compute a difference, a saving, a total or a number of days.
+Relate the news to what the person has. When new market information or a deadline bears on a contract, offer or commitment in their knowledge base, compare the figures side by side (the new market price next to every price they already have secured, in contracts and offers) and, when an action follows, suggest it. Lead the suggestion with the cheapest arrangement they already have that is still valid: name it and its price, and propose buying under it instead of at the new market price. Mention other options (an offer that expires soon, a renewal) only afterwards, and only if they add something. Put the comparison in the figures; never compute a difference, a saving, a total or a number of days.
 
 When you notify:
 - 1 to 3 short segments. Every segment cites the claim handles that support it (N1 for new claims, C1 for their knowledge base). At least one segment must cite a new claim.
