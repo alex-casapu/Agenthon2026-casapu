@@ -97,6 +97,18 @@ describe("considerClaims", () => {
     expect(s.notified).toEqual(["luca"]);
   });
 
+  it("shows the model what it already told this person, in full", async () => {
+    const tell = (req: { prompt: string }) => reply({ notify: true, topic: "Semola in rialzo", segments: [{ text: "La semola è a 502 €/t, +18%.", cites: [cites(req.prompt, "N")] }] });
+    await considerClaims(w.db, w.source, [w.claim], opts(scriptedLlm([tell]).llm, [luca]));
+    // a second source arrives later
+    const src2 = insertSource(w.db, { kind: "news", external_id: "n2", occurred_at: "2026-11-22T07:00:00Z", raw: "La semola sale a 520 €/t.", acl_labels: ["public"], meta: { title: "Ancora su", domain: "m.example" } }).source_id;
+    const r = submitClaim(w.db, { predicate_id: "spot_price", fields: { item: "ent:durum_semolina", amount: 520, currency: "EUR", per: "t" }, evidence: [{ source_id: src2, quote: "sale a 520 €/t" }] }, "agent:test", { trust: true });
+    const second = scriptedLlm([() => reply({ notify: false, segments: [], reason: "already told" })]);
+    await considerClaims(w.db, src2, [(r as { claim_id: string }).claim_id], opts(second.llm, [luca]));
+    expect(second.calls[0].prompt).toContain("Semola in rialzo");
+    expect(second.calls[0].prompt).toContain("La semola è a 502 €/t, +18%.");
+  });
+
   it("does not ask twice for the same source and claims", async () => {
     const quiet = () => reply({ notify: false, segments: [], reason: "no" });
     const first = scriptedLlm([quiet, quiet]);

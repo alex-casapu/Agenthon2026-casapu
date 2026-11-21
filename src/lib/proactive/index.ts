@@ -19,7 +19,7 @@ import { recordRow, type DB } from "../store/log";
  * are never told about it: they already have it. That rule is code, not a request to the model.
  */
 
-export const PROACTIVE_VERSION = "proactive-v2";
+export const PROACTIVE_VERSION = "proactive-v3";
 
 /** BRAIN_PROACTIVE=off switches it off (saves subscription quota while developing). */
 export const proactiveEnabled = (): boolean => process.env.BRAIN_PROACTIVE !== "off";
@@ -85,7 +85,7 @@ Speak only when ALL of these hold:
 - It is news to them: it changes, contradicts or adds to what they already know, or they were not part of the conversation it came from.
 - It is relevant to what this person does or decides, given their role.
 - It matters: a change, a risk, a deadline, an opportunity, a conflict between sources, or a reason to act. Routine facts are not worth an interruption: standing arrangements (a signed contract, a stock level, a production plan) that the person's own role already owns or watches are not news, and neither is a document that merely records what they already know.
-- You have not already told them (see recent notices), and it is not a restatement of something they were just told.
+- You have not already told them (see what you told them recently, oldest first): do not repeat a notice, and speak again on the same subject only when something has actually changed since.
 Silence is the default. When in doubt, do not notify. Most new claims should produce no notice.
 
 Relate the news to what the person has. When new market information or a deadline bears on a contract, offer or commitment in their knowledge base, say how: restate the figures side by side (for example the new market price next to every price they already have secured, in contracts and offers) and, when an action follows, suggest it: for instance to buy under the cheapest existing contract or offer instead of at the new market price (name which one and its price), or to decide before an offer expires. Put the comparison in the figures; never compute a difference, a saving, a total or a number of days.
@@ -131,7 +131,7 @@ export function buildProactivePrompt(p: Principal, source: { kind: string; title
     `# What arrived\n${source.kind}: ${source.title} (${source.when.slice(0, 10)})`,
     "# New claims\n" + fresh.map((c, i) => describe(`N${i + 1}`, c)).join("\n\n"),
     "# Their knowledge base (what they may see)\n" + (context.length ? context.map((c, i) => describe(`C${i + 1}`, c)).join("\n\n") : "(nothing else)"),
-    "# Recently told to them\n" + (recent.length ? recent.map((r) => `- ${r.topic ?? ""}: ${r.segments?.[0]?.text ?? ""}`).join("\n") : "(nothing)"),
+    "# Recently told to them\n" + (recent.length ? recent.map((r) => `- ${r.created_at.slice(0, 16).replace("T", " ")} · ${r.topic ?? ""}\n  ${(r.segments ?? []).map((x) => x.text).join(" ").slice(0, 600)}`).join("\n") : "(nothing)"),
     "Decide whether to tell them.",
   ].join("\n\n");
 }
@@ -271,7 +271,7 @@ export async function considerClaims(db: DB, sourceId: string, claimIds: string[
     try {
       const known = visibleTo(views, p).filter((c) => c.status === "approved" && !ids.includes(c.claim_id));
       const context = selectRelevant(known, mine.map(claimMaterial).join(" "));
-      const recent = listNotices(db, p.id, 5);
+      const recent = listNotices(db, p.id, 10).reverse();
       const handles = new Map<string, KnownClaim & { id: string }>();
       mine.forEach((c, i) => handles.set(`N${i + 1}`, { material: claimMaterial(c), id: c.claim_id }));
       context.forEach((c, i) => handles.set(`C${i + 1}`, { material: claimMaterial(c), id: c.claim_id }));
