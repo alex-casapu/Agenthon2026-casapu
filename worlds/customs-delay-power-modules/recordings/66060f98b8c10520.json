@@ -1,0 +1,7 @@
+{
+  "key": "66060f98b8c10520",
+  "model": "sonnet",
+  "tag": "PO-4471",
+  "text": "Purchase order PO-4471 covers the supply of PM-88 power modules from Kestrel Components to Norvane Controls S.r.l., for assembly at the Bologna plant.\n\n**Supplier:** Kestrel Components\n**Item:** PM-88 power modules\n**Quantity:** 20,000 units\n**Shipping method:** sea freight\n**Port of entry:** Genoa\n**Estimated arrival:** 27/11/2026\n\nThe goods will be received at Genoa and forwarded on to Bologna. Any change to the estimated arrival date will be recorded against this order in the ERP purchasing system.\n",
+  "recordedAt": "2026-11-21T12:58:09.250Z"
+}
