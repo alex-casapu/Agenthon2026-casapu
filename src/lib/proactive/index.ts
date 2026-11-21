@@ -311,7 +311,9 @@ export async function considerClaims(db: DB, sourceId: string, claimIds: string[
         recordNotice(db, { ...base, decision: "skip_unverified", reason: "the model's message could not be verified against the claims", model });
         out.skipped.push({ principal: p.id, decision: "skip_unverified" });
       } else {
-        const topic = best.topic && !/\d/.test(best.topic) ? best.topic.trim().slice(0, 60) : "Something new";
+        // the topic carries no figures: drop any word that has a digit, and fall back if too little is left
+        const words = best.topic.trim().split(/\s+/).filter((w) => w && !/\d/.test(w));
+        const topic = words.length >= 2 ? words.join(" ").slice(0, 60) : "Something new";
         const segments = best.segments.map((s) => ({ text: s.text, cites: s.cites.map((h) => handles.get(h)!.id) }));
         recordNotice(db, { ...base, decision: "notify", topic, segments, urgency: best.urgency, reason: best.reason.slice(0, 300) || null, model });
         out.notified.push(p.id);
