@@ -5,18 +5,22 @@ import { usePathname } from "next/navigation";
 import { SLIDES } from "@/lib/scenario/slides";
 import { NAV_LEFT, SLIDE_ICONS } from "./nav";
 
+/** The pages the live demo uses. The others (debug, presenter, backup slides) stay reachable by URL or the B key. */
+const SHOWN = new Set(["/claims", "/chat", "/sources"]);
+
 export default function TopBar() {
   const path = usePathname();
+  const talk = SLIDES.filter((s) => !s.backup);
   return (
     <nav className="topbar" aria-label="Views">
-      {NAV_LEFT.map((n) => (
+      {NAV_LEFT.filter((n) => SHOWN.has(n.href)).map((n) => (
         <Link key={n.href} href={n.href} title={n.label} aria-label={n.label} className={path.startsWith(n.href) ? "active" : ""}>
           {n.icon}
         </Link>
       ))}
       <span className="spacer" />
       <span className="topbar-slides" role="group" aria-label="Presentation">
-        {SLIDES.map((s, i) => {
+        {talk.map((s, i) => {
           const href = `/slides/${s.slug}`;
           return (
             <Link key={s.slug} href={href} title={`${i + 1}. ${s.title}`} aria-label={`Slide ${i + 1}: ${s.title}`} className={path === href ? "active" : ""}>

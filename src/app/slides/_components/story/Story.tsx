@@ -10,7 +10,8 @@ export function IntroStory() {
     <div className="st-full">
       <At from={0} className="sl-eyebrow">GDG Agenthon 2026 · Challenge A</At>
       <At from={0} delay={0.2}><h1 className="st-huge" style={{ margin: ".15em 0 .2em" }}>Company Brain</h1></At>
-      <At from={0} delay={0.6}><p className="st-big" style={{ color: "var(--muted)", fontSize: "clamp(22px,2.8vw,44px)", maxWidth: "20em" }}>The technology. Shown on a simulated pasta company.</p></At>
+      <At from={0} delay={0.6}><p className="st-big" style={{ color: "var(--muted)", fontSize: "clamp(22px,2.8vw,44px)", maxWidth: "20em" }}>The colleague who knows, and speaks first.</p></At>
+      <At from={0} delay={1}><div className="st-tag" style={{ marginTop: "1.6em" }}>Live demo · a simulated pasta company</div></At>
     </div>
   );
 }
