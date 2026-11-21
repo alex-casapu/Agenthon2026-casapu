@@ -65,7 +65,7 @@ export default function ChannelSlide() {
   const [view, setView] = useState<"slack" | "email">("slack");
   return (
     <div>
-      <div className="sl-eyebrow">Check 1 · Speaks first · Check 7 · Fits the day</div>
+      <div className="sl-eyebrow">09:02 · #procurement</div>
       <h1>Nobody asked. It wrote first.</h1>
       <div className="sl-viewtoggle">
         <button className={view === "slack" ? "on" : ""} onClick={() => setView("slack")}>Team chat</button>

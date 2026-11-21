@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { NODES } from "@/lib/scenario/data";
-import { CHECKS, checks, lineage } from "@/lib/scenario/engine";
+import { lineage } from "@/lib/scenario/engine";
 import { useScenario } from "@/lib/scenario/store";
 import { SourceDrawer, StatusChip } from "./ui";
 
@@ -11,18 +11,16 @@ export default function WhySlide() {
   const [src, setSrc] = useState<string | null>(null);
 
   const decided = ["AZ-02", "AZ-01"].find((id) => s.nodes[id].status === "approved");
-  const lit = Object.values(checks(s)).filter(Boolean).length;
 
   return (
     <div>
       <div className="sl-eyebrow">Accountability</div>
       <div className="sl-whyhead">
         <h1>“Why did we buy 3,000 t from Alta Murgia Mill?”</h1>
-        <div className="sl-score"><span className="n">{lit}</span> of {CHECKS.length}<br />checks shown</div>
       </div>
 
       {!decided ? (
-        <div className="sl-empty">No purchase has been made yet. Approve the action on slide 8 first.</div>
+        <div className="sl-empty">No purchase has been made yet. Approve the action on “It only proposes” first.</div>
       ) : (
         <WhyChain id={decided} onOpen={setSrc} />
       )}

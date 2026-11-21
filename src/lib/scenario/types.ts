@@ -66,7 +66,7 @@ export interface Message {
   correction?: boolean;
 }
 
-export type AskKind = "answer" | "unknown" | "unauthorized" | "refusal";
+export type AskKind = "answer" | "unknown" | "refusal";
 
 export interface AskResult {
   kind: AskKind;

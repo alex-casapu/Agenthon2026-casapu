@@ -30,7 +30,7 @@ export default function WhoSlide() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div className="sl-eyebrow">Check 3 · It knows who’s asking</div>
+      <div className="sl-eyebrow">Two people · one question</div>
       <h1 style={{ fontSize: "1.8em" }}>Same question. Two people. Different answers.</h1>
       <div className="sl-chat" style={{ flex: 1 }}>
         <div className="sl-chat-log" ref={log}>
