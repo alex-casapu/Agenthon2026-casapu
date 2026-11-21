@@ -12,7 +12,7 @@ Esce un report di mercato: il prezzo spot è salito del **18%** in tre settimane
 
 **L'agente se ne accorge da solo**, mette insieme le prove e propone conclusioni ("il rincaro ci costa circa 123.000 € al mese") e un'azione ("anticipa l'acquisto di 3.000 t da un altro mulino a un prezzo migliore"). Scrive per primo ad Acquisti.
 
-Acquisti cura la memoria: approva le conclusioni solide e **rifiuta una voce di corridoio** non verificata. Finance e Produzione vedono ciascuno solo ciò che gli compete.
+Acquisti cura la memoria: approva le conclusioni solide e **rifiuta un'informazione di seconda mano**, scritta in chat e non verificata. Finance e Produzione vedono ciascuno solo ciò che gli compete.
 
 **Colpo di scena:** arriva una **rettifica**. Il +18% riguardava un solo mercato locale in una settimana di picco; la media nazionale è +12,5%. L'agente non riscrive nulla: aggiunge la nuova prova, segna come "da rivedere" tutto ciò che dipendeva da quella vecchia e propone le versioni aggiornate, con numeri più bassi. L'azione viene approvata solo in questa versione.
 
@@ -25,7 +25,7 @@ Alla fine chiunque può chiedere "perché abbiamo comprato quelle 3.000 t?" e ot
 | Ruolo | Persona | Cosa vede | Cura la memoria |
 |---|---|---|---|
 | Acquisti | Marta Ricci | Tutto | Sì |
-| Finance | Luca Bianchi | Dati pubblici e finanziari (contratti, offerte, voci) | No |
+| Finance | Luca Bianchi | Dati pubblici e finanziari (contratti, offerte, canale #semola-acquisti) | No |
 | Produzione | Sara Conti | Solo dati pubblici (mercato, fabbisogno, scorte) | No |
 
 Ogni prova ha una visibilità: `tutti` oppure `finance`. Acquisti vede sempre tutto.
@@ -49,7 +49,7 @@ Due tipi di rifiuto, distinguibili:
 | EV-03 | Fabbisogno di semola di Parma: **4.000 t/mese**. | Piano produzione Q4 | alta | 02/11/2026 | tutti |
 | EV-04 | Scorte di semola a Parma al 20/11: **9 giorni di copertura**. | WMS Parma | alta | 20/11/2026 | tutti |
 | EV-05 | Offerta di Mulino Alta Murgia: **3.000 t a 470 €/t**, consegne dicembre-gennaio, **valida fino al 28/11/2026**. | Email offerta, 18/11 | alta | 18/11/2026 | finance |
-| EV-06 | Email interna di un commerciale alla direzione: *"in fiera ho sentito che il raccolto canadese è molto peggio del previsto, i prezzi continueranno a salire, ma non so da chi"*. | Email interna, 19/11 | **bassa** | 19/11/2026 | finance |
+| EV-06 | Messaggio del commerciale Roberto Fabbri nel canale #semola-acquisti (membri: Acquisti e Finance): *"mi dicono da fuori che il raccolto canadese è messo peggio del previsto e che i prezzi continueranno a salire. Non ho conferme, riporto solo quello che mi hanno detto."* | Chat #semola-acquisti, 19/11 | **bassa** | 19/11/2026 | finance |
 
 ### 3.2 Memoria approvata di partenza
 
