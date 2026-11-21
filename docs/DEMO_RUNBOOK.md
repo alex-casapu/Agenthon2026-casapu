@@ -16,8 +16,8 @@ The talk (`/slides/intro`) is glue between pieces; the middle is the real app in
 
 | # | Where | Do | Shows |
 |---|---|---|---|
-| 1 | `/claims?demo=1`, as Marta | Press **▶ Alert** | A source arrives by itself; claims appear, proposed |
-| 2 | same page | **Reject** the claim from the fair | People curate the memory |
+| 1 | `/sources` (New source) | Describe a piece of information, review the draft, let it arrive | Something enters the simulated world by hand; the Brain reads it and proposes claims |
+| 2 | `/claims`, as Marta | **Reject** the claim it produced | People curate the memory |
 | 3 | `/chat`, as Sara | "What is our framework contract price?" | "I don't know": never admits the fact exists |
 | 4 | `/chat`, as Luca | the same question | The answer, with its citations |
 | 5 | `/chat`, as Marta | "What did we hear about the Canadian harvest?" | "I don't know": the rumour was rejected |

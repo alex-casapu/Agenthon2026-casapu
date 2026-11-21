@@ -31,7 +31,7 @@ export const SLIDES: Slide[] = [
   { slug: "inputs", title: "Where the information comes from", act: "Sources", steps: 1,
     notes: ["Emails, news, documents: what a company already has. Each is a file with who may see it and how far to trust it. ~15 s."] },
   { slug: "demo", title: "Live, on the real app", act: "Live", steps: 4,
-    notes: ["The real web app, in the simulated world. 1 alert, 2 reject, 3 no access, 4 with access and citations, 5 unknown. ~20 s each."] },
+    notes: ["The real web app, in the simulated world. 1 add a piece of information by hand (New source), 2 reject it, 3 no access, 4 with access and citations, 5 unknown. ~20 s each."] },
   // ---- the technically interesting ideas (your brother) -----------------------------------------
   { slug: "extract", title: "Facts, not summaries", act: "The ideas", steps: 2,
     notes: ["Atomic claims tied to verbatim quotes, three tiers of trust, a gate made of plain code."] },

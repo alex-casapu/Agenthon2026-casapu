@@ -16,11 +16,11 @@ We'll show it live, on a simulated company that makes pasta.
 
 **▸ 2**  Each one arrives as a file. It says who may see it, and how far to trust it. And nothing is ever edited: a correction is a new source.
 
-## 3. Live, on the real app · LIVE on the real app · ~72 words
+## 3. Live, on the real app · LIVE on the real app · ~82 words
 
-**▸ 1**  [On the page: press ▶ Alert.] Something just arrived. Nobody asked: the Brain read it and proposed what it says.
+**▸ 1**  [New source: describe a piece of information, review the draft, let it arrive.] First, we add something to the simulated world by hand: a message arrives. Nobody asked: the Brain reads it and proposes what it says.
 
-**▸ 2**  [As Marta: Reject the claim from the fair.] It was a rumour. Marta rejects it: nothing becomes memory until a person says so.
+**▸ 2**  [As Marta: Reject the claim.] It was fake news. Marta rejects it: nothing becomes memory until a person says so.
 
 **▸ 3**  [Sara asks: "What is our framework contract price?"] Sara asks about the contract. "I don't know." Her agent only knows what Sara may know.
 
@@ -62,4 +62,4 @@ Thank you.
 
 ---
 
-Total: **324 words**, about **2.3 min** of speech at 140 words a minute, plus the clicks in the live demo.
+Total: **334 words**, about **2.4 min** of speech at 140 words a minute, plus the clicks in the live demo.

@@ -9,8 +9,8 @@ export const SCRIPT: Record<string, string[]> = {
     "Good morning. We're [your names], and this is Company Brain: the colleague who knows, and speaks first.\n\nWe'll show it live, on a simulated company that makes pasta.",
   ],
   demo: [
-    "[On the page: press ▶ Alert.] Something just arrived. Nobody asked: the Brain read it and proposed what it says.",
-    "[As Marta: Reject the claim from the fair.] It was a rumour. Marta rejects it: nothing becomes memory until a person says so.",
+    "[New source: describe a piece of information, review the draft, let it arrive.] First, we add something to the simulated world by hand: a message arrives. Nobody asked: the Brain reads it and proposes what it says.",
+    "[As Marta: Reject the claim.] It was fake news. Marta rejects it: nothing becomes memory until a person says so.",
     "[Sara asks: \"What is our framework contract price?\"] Sara asks about the contract. \"I don't know.\" Her agent only knows what Sara may know.",
     "[Luca asks the same.] Same question, from someone who may know. The answer, and every citation behind it.",
     "[Marta asks: \"What did we hear about the Canadian harvest?\"] And a question it can't answer. It was rejected, so: \"I don't know.\"",
