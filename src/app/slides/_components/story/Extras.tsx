@@ -36,29 +36,9 @@ export function IdeasStory() {
   );
 }
 
-const REAL = [
-  "Email, news and documents as files in folders, parsed against strict contracts",
-  "Extraction with Claude: atomic claims, quotes checked by the gate",
-  "Entities admitted automatically, grounded in the text",
-  "Chat as three roles, with citations and “I don’t know”",
-  "Curation: trusted by default, a curator can reject",
-  "Heads-up: the memory tells each person what they should hear",
-  "New source page: draft, preview, add, live",
-  "Worlds generated from a scenario, replayable",
-];
-const SCRIPTED = [
-  "The story slides run on a scripted scenario engine, not on the real backend",
-  "The purchase order and its approval flow (PO-9120)",
-  "“Why did we buy?”: the decision trace",
-  "The recompute animation when a source is distrusted",
-];
-const MISSING = [
-  "Derived claims: cover days, price gaps, savings are not computed or stored",
-  "Proposals as real objects with approval and execution",
-  "Recompute when a source is corrected or distrusted",
-  "Real connectors (mail, drive) and real login",
-  "More than three people, or more than one machine",
-];
+const REAL = ["Sources, claims and the gate", "Chat with citations and “I don’t know”", "Heads-up: it speaks first"];
+const SCRIPTED = ["The story slides", "Purchase order and approvals"];
+const MISSING = ["Derived claims (the maths)", "Recompute on a correction", "Real connectors and login"];
 
 function Column({ title, tag, cls, items, at }: { title: string; tag: string; cls: string; items: string[]; at: number }) {
   const color = cls === "ok" ? "var(--ok)" : cls === "warn" ? "var(--warn)" : "var(--bad)";
@@ -68,7 +48,7 @@ function Column({ title, tag, cls, items, at }: { title: string; tag: string; cl
         <div className="hd"><span>{title}</span><span className={`st-tag ${cls}`}>{tag}</span></div>
         <ul style={{ listStyle: "none", margin: 0, padding: ".4em 1.1em .8em" }}>
           {items.map((t) => (
-            <li key={t} className="st-row" style={{ justifyContent: "flex-start", gap: ".8em", fontSize: ".78em", lineHeight: 1.4 }}>
+            <li key={t} className="st-row" style={{ justifyContent: "flex-start", gap: ".8em", fontSize: ".95em", lineHeight: 1.35 }}>
               <span className="st-mono" style={{ color, flex: "none" }}>{cls === "ok" ? "✓" : cls === "warn" ? "◐" : "✕"}</span>
               <span>{t}</span>
             </li>
@@ -83,16 +63,11 @@ export function ScopeStory() {
   return (
     <div className="st-full" style={{ alignContent: "center" }}>
       <Left eyebrow="Backup · Scope" title={<>What is real, what is staged, <span className="st-hl">what is missing.</span></>} />
-      <div style={{ display: "grid", gridTemplateColumns: "1.25fr 1fr 1fr", gap: "1em", marginTop: ".4em", alignItems: "stretch" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1em", marginTop: ".4em", alignItems: "stretch" }}>
         <Column title="Built and running" tag="the live app" cls="ok" items={REAL} at={0} />
         <Column title="Staged in the slides" tag="scripted" cls="warn" items={SCRIPTED} at={1} />
         <Column title="Not built yet" tag="honest gaps" cls="bad" items={MISSING} at={2} />
       </div>
-      <At from={2} delay={0.3}>
-        <p className="st-mid" style={{ fontSize: ".8em", maxWidth: "none" }}>
-          The live app is the chat, the claims, the new-source page and the Heads-up notices. The staged slides show where it is going; 451 automated tests cover what runs.
-        </p>
-      </At>
     </div>
   );
 }
