@@ -110,16 +110,16 @@ export type IngestResult = "ingested" | "duplicate" | "conflict" | "invalid";
 
 export function recordIngestEvent(
   db: DB,
-  e: { path: string; file_hash: string; result: IngestResult; source_id?: string | null; errors?: string[] },
+  e: { kind: string; path: string; file_hash: string; result: IngestResult; source_id?: string | null; errors?: string[] },
 ): void {
   const info = db
-    .prepare("INSERT INTO ingest_events (path, file_hash, result, source_id, error, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-    .run(e.path, e.file_hash, e.result, e.source_id ?? null, e.errors?.length ? canonicalJson(e.errors) : null, new Date().toISOString());
+    .prepare("INSERT INTO ingest_events (kind, path, file_hash, result, source_id, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .run(e.kind, e.path, e.file_hash, e.result, e.source_id ?? null, e.errors?.length ? canonicalJson(e.errors) : null, new Date().toISOString());
   recordRow(db, "ingest_events", String(info.lastInsertRowid));
 }
 
-export function ingestSeen(db: DB, path: string, fileHash: string): boolean {
-  return !!db.prepare("SELECT 1 FROM ingest_events WHERE path = ? AND file_hash = ?").get(path, fileHash);
+export function ingestSeen(db: DB, kind: string, path: string, fileHash: string): boolean {
+  return !!db.prepare("SELECT 1 FROM ingest_events WHERE kind = ? AND path = ? AND file_hash = ?").get(kind, path, fileHash);
 }
 
 export function findSourcesByExternalId(db: DB, kind: string, externalId: string) {

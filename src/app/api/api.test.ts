@@ -12,6 +12,11 @@ import { GET as getSchema } from "./debug/schema/route";
 import { GET as getRows } from "./debug/rows/route";
 import { POST as postSql } from "./debug/sql/route";
 import { GET as getVerify } from "./debug/verify/route";
+import { POST as postScan } from "./ingest/scan/route";
+import { GET as getIngestStatus } from "./ingest/status/route";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const json = (url: string, body: unknown) =>
   new Request(`http://test${url}`, { method: "POST", headers: { "content-type": "application/json" }, body: typeof body === "string" ? body : JSON.stringify(body) });
@@ -113,6 +118,37 @@ describe("API", () => {
       expect((await postSql(json("/api/debug/sql", { sql: "DROP TABLE claims" }))).status).toBe(400);
       expect((await postSql(json("/api/debug/sql", { nope: 1 }))).status).toBe(400);
       expect((await postSql(json("/api/debug/sql", "not json"))).status).toBe(400);
+    });
+  });
+
+  describe("ingest routes", () => {
+    it("scans every source folder and reports status per kind", async () => {
+      const inbox = mkdtempSync(join(tmpdir(), "api-inbox-"));
+      const news = mkdtempSync(join(tmpdir(), "api-news-"));
+      const docs = join(mkdtempSync(join(tmpdir(), "api-docs-")), "not-created-yet");
+      process.env.BRAIN_INBOX = inbox;
+      process.env.BRAIN_NEWS = news;
+      process.env.BRAIN_DOCS = docs;
+      try {
+        mkdirSync(join(news, "sub"), { recursive: true });
+        writeFileSync(join(inbox, "a.md"), "---\nmessage_id: m1\ndate: 2026-10-12T09:00:00Z\nfrom: a@x.example\nto: b@x.example\nsubject: s\n---\nCiao 412 €/t\n");
+        writeFileSync(join(news, "sub", "n.md"), "---\narticle_id: n1\ndomain: example.com\ndate: 2026-11-21\ntitle: t\n---\nTesto\n");
+        writeFileSync(join(news, "bad.md"), "no header");
+
+        const scan = await (await postScan()).json();
+        expect(scan.outcomes.map((o: { kind: string; result: string }) => `${o.kind}:${o.result}`).sort()).toEqual(["email:ingested", "news:ingested", "news:invalid"]);
+        expect((await (await postScan()).json()).outcomes).toEqual([]);
+
+        const st = await (await getIngestStatus()).json();
+        expect(st.folders).toEqual({ email: inbox, news, document: docs });
+        expect(st.events).toHaveLength(3);
+        expect(st.events.find((e: { kind: string; result: string }) => e.kind === "news" && e.result === "ingested").domain).toBe("example.com");
+        expect(st.counts).toEqual(expect.arrayContaining([{ kind: "news", result: "invalid", n: 1 }]));
+      } finally {
+        delete process.env.BRAIN_INBOX;
+        delete process.env.BRAIN_NEWS;
+        delete process.env.BRAIN_DOCS;
+      }
     });
   });
 });

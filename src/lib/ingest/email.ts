@@ -1,7 +1,7 @@
-import { parse as parseYaml } from "yaml";
 import { z } from "zod";
-import { canonicalize } from "../canon";
 import { canonicalJson, sha256 } from "../hash";
+import { DATETIME_TZ, issueMessages, labelsField, reliabilityField, splitFrontMatter, token } from "./common";
+import type { ParseOutcome } from "./types";
 
 /** Parser for the email source contract. See docs/EMAIL_CONTRACT.md. */
 
@@ -43,8 +43,6 @@ function parseAddress(s: string): Address | null {
   return b ? { name: null, addr: b[1].toLowerCase() } : null;
 }
 
-const token = z.string().regex(/^\S+$/, "must not contain whitespace").max(200);
-
 const addressList = (field: string) =>
   z
     .union([z.string(), z.array(z.string())])
@@ -59,14 +57,12 @@ const addressList = (field: string) =>
       return out;
     });
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
-
 const HeaderSchema = z
   .object({
     message_id: token,
     date: z
       .string()
-      .regex(DATE_RE, "must be ISO 8601 with a timezone, e.g. 2026-10-12T09:15:00+02:00")
+      .regex(DATETIME_TZ, "must be ISO 8601 with a timezone, e.g. 2026-10-12T09:15:00+02:00")
       .refine((s) => !Number.isNaN(Date.parse(s)), "is not a real date"),
     from: z.string().transform((v, ctx) => {
       const a = v.includes(",") && !/<[^>]*,[^>]*>/.test(v) ? null : parseAddress(v);
@@ -78,32 +74,19 @@ const HeaderSchema = z
     subject: z.string().min(1),
     thread_id: token.optional(),
     in_reply_to: token.optional(),
-    labels: z.array(z.string().regex(/^[a-z0-9_-]+$/, "labels must match [a-z0-9_-]+")).min(1).optional(),
-    reliability: z.enum(["high", "low"]).optional(),
+    labels: labelsField,
+    reliability: reliabilityField,
   })
   .strict();
 
-const FRONT = /^---[ \t]*\n([\s\S]*?)\n---[ \t]*(?:\n|$)/;
-
 export function parseEmail(fileText: string): ParseResult {
-  const text = fileText.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
-  const m = FRONT.exec(text);
-  if (!m) return { ok: false, errors: ["file must start with a --- YAML header closed by a --- line"] };
+  const split = splitFrontMatter(fileText);
+  if (!split.ok) return split;
 
-  let raw: unknown;
-  try {
-    raw = parseYaml(m[1]);
-  } catch (e) {
-    return { ok: false, errors: [`header is not valid YAML: ${(e as Error).message.split("\n")[0]}`] };
-  }
-  if (raw === null || typeof raw !== "object" || Array.isArray(raw))
-    return { ok: false, errors: ["header must be a YAML mapping of keys to values"] };
+  const parsed = HeaderSchema.safeParse(split.raw);
+  if (!parsed.success) return { ok: false, errors: issueMessages(parsed.error) };
 
-  const parsed = HeaderSchema.safeParse(raw);
-  if (!parsed.success)
-    return { ok: false, errors: parsed.error.issues.map((i) => (i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message)) };
-
-  const body = canonicalize(text.slice(m[0].length));
+  const body = split.body;
   if (body.trim() === "") return { ok: false, errors: ["body is empty"] };
 
   const h = parsed.data;
@@ -120,4 +103,34 @@ export function parseEmail(fileText: string): ParseResult {
     reliability: h.reliability ?? null,
   };
   return { ok: true, email: { header, body, content_hash: sha256(canonicalJson(header) + "\n" + body) } };
+}
+
+/** Email parser in the common shape used by the ingest layer. */
+export function parseEmailSource(fileText: string): ParseOutcome {
+  const r = parseEmail(fileText);
+  if (!r.ok) return r;
+  const { header: h, body, content_hash } = r.email;
+  return {
+    ok: true,
+    parsed: {
+      kind: "email",
+      external_id: h.message_id,
+      occurred_at: h.date,
+      author: h.from.addr,
+      recipients: [...h.to, ...h.cc].map((a) => a.addr),
+      thread_id: h.thread_id,
+      reply_to: h.in_reply_to,
+      labels: h.labels,
+      meta: {
+        subject: h.subject,
+        from_name: h.from.name,
+        to: h.to,
+        cc: h.cc,
+        in_reply_to: h.in_reply_to,
+        reliability: h.reliability,
+      },
+      body,
+      content_hash,
+    },
+  };
 }

@@ -10,7 +10,7 @@
     "test": "vitest run",
     "db:reset": "rm -f data/brain.db data/brain.db-wal data/brain.db-shm",
     "test:cov": "vitest run --coverage --coverage.include=src/lib/** --coverage.include=src/app/api/** --coverage.reporter=text",
-    "inbox:example": "mkdir -p data/inbox && cp examples/inbox/*.md data/inbox/"
+    "inbox:example": "mkdir -p data/inbox data/news data/docs && cp examples/inbox/*.md data/inbox/ && cp examples/news/*.md data/news/ && cp examples/docs/*.md data/docs/"
   },
   "dependencies": {
     "better-sqlite3": "^13.2.0",

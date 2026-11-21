@@ -1,6 +1,6 @@
 import { mkdirSync, watch, type FSWatcher } from "node:fs";
 import type { DB } from "../store";
-import { scanInbox } from "./inbox";
+import { scanInbox, type SourceKind } from "./inbox";
 
 export interface InboxWatcher {
   scanNow(): void;
@@ -12,19 +12,20 @@ export interface InboxWatcher {
  * rescan covers platforms/filesystems where events are dropped. A file that
  * changed in the last `settleMs` is left for the next pass (it may be mid-write).
  */
-export function startInboxWatcher(db: DB, root: string, opts: { settleMs?: number; pollMs?: number } = {}): InboxWatcher {
+export function startInboxWatcher(db: DB, root: string, opts: { settleMs?: number; pollMs?: number; kind?: SourceKind } = {}): InboxWatcher {
   const settleMs = opts.settleMs ?? 300;
+  const kind = opts.kind ?? "email";
   mkdirSync(root, { recursive: true });
 
   let timer: NodeJS.Timeout | null = null;
   const scan = () => {
     timer = null;
     try {
-      const { outcomes, pending } = scanInbox(db, root, { minAgeMs: settleMs });
-      for (const o of outcomes) console.log(`[inbox] ${o.result.padEnd(9)} ${o.path}${o.errors ? ` — ${o.errors.join("; ")}` : ""}`);
+      const { outcomes, pending } = scanInbox(db, root, { minAgeMs: settleMs, kind });
+      for (const o of outcomes) console.log(`[${kind}] ${o.result.padEnd(9)} ${o.path}${o.errors ? ` — ${o.errors.join("; ")}` : ""}`);
       if (pending > 0) schedule(settleMs + 100);
     } catch (e) {
-      console.error("[inbox] scan failed:", e);
+      console.error(`[${kind}] scan failed:`, e);
     }
   };
   const schedule = (ms: number) => {

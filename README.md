@@ -46,6 +46,8 @@ TypeScript end to end · Next.js (web is the UI) · SQLite via `better-sqlite3` 
 | Web workbench: ingest, propose through gate, approve/reject, highlight quotes | done |
 | Icon top bar (`src/app/nav.tsx`) and `/debug` god-mode GUI: table browser with FK navigation, read-only SQL console, integrity view | done |
 | Email source contract (`docs/EMAIL_CONTRACT.md`): Markdown + YAML header, folder inbox, live watcher, append-only ingest ledger, Inbox tab | done |
+| News source contract (`docs/NEWS_CONTRACT.md`): same mechanics, `domain` as unit of source trust, `corrects` link | done |
+| Document source contract (`docs/DOCUMENT_CONTRACT.md`): contracts, invoices, reports, exports; `doc_type`, `supersedes` versioning, tables citable per row | done |
 | Test suite: gate, store, tamper evidence, API routes, debug lib (~95% statements) | done |
 | Entity registry | next |
 | LLM extraction with repair loop | next |
@@ -71,9 +73,9 @@ src/lib/store/     DB, hash chain, migrations runner, verify
 src/lib/predicates.ts   predicate vocabulary (versioned)
 src/app/           Next.js UI and API routes
 src/app/debug/     god-mode debug GUI (add a page: new entry in src/app/nav.tsx)
-docs/              scenario, email contract, design docs
-examples/inbox/    example emails (`npm run inbox:example` copies them into data/inbox)
-src/lib/ingest/    email parser, folder ingest, watcher
+docs/              scenario, source contracts (email, news, document), design docs
+examples/          example emails, news, documents (`npm run inbox:example` copies them into data/inbox, data/news, data/docs)
+src/lib/ingest/    email, news, document parsers, shared front-matter code, kind registry, folder ingest, watcher
 ```
 
 ## Run

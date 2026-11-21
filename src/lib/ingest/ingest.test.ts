@@ -156,7 +156,7 @@ describe("ingest", () => {
     writeFileSync(p, email({}, "\nIl prezzo è 999 €/t.\n"));
     const { outcomes } = scanInbox(db, root);
     expect(outcomes).toMatchObject([{ result: "conflict" }]);
-    expect(outcomes[0].errors?.[0]).toMatch(/correction as a new email/);
+    expect(outcomes[0].errors?.[0]).toMatch(/correction as a new item/);
     expect(listSources(db)).toHaveLength(1);
     expect(listSources(db)[0].text).toContain("412");
 
