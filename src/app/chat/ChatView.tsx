@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { setPrincipalId, useActor } from "../components/principal";
 import { AssistantMessage, Typing, UserMessage, type Msg } from "./Message";
+import { NoticeFeed, type Notice } from "./Notices";
 import { ArrowIcon, Avatar, BrainMark, PlusIcon, SendIcon } from "./ui";
 
 type Knowledge = { approved: { claim_id: string; sentence: string; labels: string[] }[]; pending: number };
@@ -58,6 +59,7 @@ export default function ChatView() {
   const [pending, setPending] = useState<string | null>(null);
   const [phase, setPhase] = useState(0);
   const [input, setInput] = useState("");
+  const [heads, setHeads] = useState<{ pid: string; list: Notice[] } | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLTextAreaElement>(null);
 
@@ -70,6 +72,26 @@ export default function ChatView() {
       .then((d) => { if (alive && d.approved) setKnow({ pid, data: d }); });
     return () => { alive = false; };
   }, [pid, me, tick]);
+
+  // what the memory has decided to tell this person unprompted; checked every few seconds so a new
+  // source arriving during a demo shows up on its own
+  useEffect(() => {
+    if (!me) return;
+    let alive = true;
+    const load = () =>
+      fetch("/api/notices")
+        .then((r) => r.json())
+        .then((d) => { if (alive && d.notices) setHeads({ pid, list: d.notices }); })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 6000);
+    return () => { alive = false; clearInterval(t); };
+  }, [pid, me]);
+
+  async function dismiss(id: string) {
+    setHeads((h) => (h ? { ...h, list: h.list.map((n) => (n.notice_id === id ? { ...n, seen: true } : n)) } : h));
+    await fetch("/api/notices/seen", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ids: [id] }) }).catch(() => {});
+  }
 
   useEffect(() => {
     const bump = () => setTick((n) => n + 1);
@@ -88,6 +110,7 @@ export default function ChatView() {
   }, [messages.length, pending]);
 
   const knowledge = know && know.pid === pid ? know.data : null;
+  const notices = heads && heads.pid === pid ? heads.list : [];
   const waiting = pending === pid;
 
   async function send(text: string) {
@@ -207,6 +230,8 @@ export default function ChatView() {
                 </div>
               </div>
             )}
+
+            {me && <NoticeFeed notices={notices} onDismiss={dismiss} onAsk={send} />}
 
             {me && messages.length === 0 && !waiting && (
               <div className="empty">

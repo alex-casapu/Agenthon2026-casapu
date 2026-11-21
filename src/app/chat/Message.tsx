@@ -15,7 +15,7 @@ export function UserMessage({ m, who, name }: { m: Msg; who: string; name: strin
   );
 }
 
-function Source({ c, active, onHover }: { c: Citation; active: boolean; onHover: (n: number | null) => void }) {
+export function Source({ c, active, onHover }: { c: Citation; active: boolean; onHover: (n: number | null) => void }) {
   const [open, setOpen] = useState(false);
   const evidence = c.evidence.slice(0, 2);
   return (

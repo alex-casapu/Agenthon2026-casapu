@@ -105,11 +105,13 @@ npm run eval:extract   # live extraction eval against fixtures/extraction-truth.
 | `BRAIN_LLM_MODE` | `auto` | `auto` replay-or-call-and-record · `live` always call · `replay` recorded responses only (offline demo) |
 | `BRAIN_LLM_CACHE` | `data/llm-cache` | where responses are recorded |
 | `BRAIN_EXTRACT_CONCURRENCY` | 1 | parallel extractions (1 keeps entity discovery deterministic) |
+| `BRAIN_PROACTIVE` | on | `off` stops the memory from telling people about new claims on its own |
 | `BRAIN_TRUST` | on | `off` makes claims wait for a curator to approve them (the original approve-first behaviour) |
 | `BRAIN_PRINCIPALS` | `data/principals.json` | who can use the system; absent = the default demo cast |
 
 ## Decisions worth knowing
 
+- **The memory speaks first.** When a source yields new claims, each person who may see them is considered separately (`lib/proactive`): a model, given only that person's own knowledge base, decides whether to tell them something. Senders, recipients and anyone else in the thread are never told (code, not the model). Silence is the default; messages are cited and verified like chat answers, and every decision, skips included, is stored. They appear as Heads-up cards in the chat. `BRAIN_PROACTIVE=off` disables it.
 - **New sources can be simulated live.** The `/sources` page turns a short request into drafted emails, articles or documents; code writes the headers, the real parser checks them, and nothing is written until a person accepts the preview. Accepted files land in the source folders and arrive like any other.
 - **Claims are trusted by default.** A claim that passes the gate is approved on admission by the policy (recorded as `policy:trust-by-default`, never as a person) and is usable at once. Curation means rejecting what is wrong; a rejection sticks even if the same fact is read again. `BRAIN_TRUST=off` restores approve-first.
 - **Entities are discovered, never approved.** Recognising a supplier, product or person is not an action. Grounding is mechanical (quote or header information); a wrong guess costs a duplicate name, not a wrong decision.

@@ -2,6 +2,7 @@ import { principalFromRequest } from "@/lib/api-principal";
 import { ReviewBody } from "@/lib/api";
 import { claimLabels } from "@/lib/claims-view";
 import { canSee } from "@/lib/policy";
+import { enqueueProactive } from "@/lib/proactive/queue";
 import { getDb, reviewClaim } from "@/lib/store";
 
 /** Approve / reject / retract. Only a curator may, and the actor is the principal, never a client-supplied name. */
@@ -18,5 +19,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   // A claim the curator is not cleared for is indistinguishable from one that does not exist.
   if (!canSee(principal, claimLabels(db, id))) return Response.json({ ok: false, error: "unknown claim" }, { status: 409 });
   const res = reviewClaim(db, id, parsed.data.type, `human:${principal.id}`, parsed.data.reason);
+  if (res.ok && parsed.data.type === "approved") {
+    // a claim that only now became usable is new knowledge for the people who may see it
+    const src = db.prepare("SELECT q.source_id FROM claim_evidence e JOIN quotes q USING (quote_id) WHERE e.claim_id = ? LIMIT 1").get(id) as { source_id: string } | undefined;
+    if (src) enqueueProactive(src.source_id, [id]);
+  }
   return Response.json(res, { status: res.ok ? 200 : 409 });
 }
