@@ -56,7 +56,7 @@ const MAX_CLAIMS = 120;
 const words = (s: string) => new Set(s.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2));
 
 /** With a large memory, keep the claims sharing the most words with the question. */
-function selectRelevant(claims: ClaimView[], text: string): ClaimView[] {
+export function selectRelevant(claims: ClaimView[], text: string): ClaimView[] {
   if (claims.length <= MAX_CLAIMS) return claims;
   const q = words(text);
   return claims

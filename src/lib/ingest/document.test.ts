@@ -1,8 +1,9 @@
+import { memDb } from "../testkit";
 import { mkdirSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { listClaims, listSources, openDb, submitClaim, verify, type DB } from "../store";
+import { listClaims, listSources, submitClaim, verify, type DB } from "../store";
 import { parseDocumentSource } from "./document";
 import { listInboxFiles, scanInbox } from "./inbox";
 
@@ -124,7 +125,7 @@ describe("document ingest", () => {
   };
   const scan = (root = docs) => scanInbox(db, root, { kind: "document" });
   beforeEach(() => {
-    db = openDb(":memory:");
+    db = memDb();
     docs = mkdtempSync(join(tmpdir(), "docs-"));
   });
 

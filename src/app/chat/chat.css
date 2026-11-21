@@ -233,3 +233,31 @@
   .empty h1, .gate h1 { font-size: 32px; }
   .composer-wrap { padding: 6px 14px 12px; }
 }
+
+/* ------------------------------------------------------------ heads-up (proactive notices) */
+.notices { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+.notices-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.notices-head .muted { font-weight: 400; letter-spacing: 0; text-transform: none; }
+.notices-head .count { padding: 1px 8px; border-radius: 999px; color: #fff; font-size: 11px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+.notice { padding: 14px 16px 12px; border-radius: 18px; background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); box-shadow: var(--shadow); animation: fadeUp 0.4s ease both; position: relative; }
+.notice::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 3px; background: linear-gradient(var(--accent), var(--accent-2)); }
+.notice.high { border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); }
+.notice.high::before { background: var(--warn); }
+.notice header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.notice-topic { font-weight: 650; letter-spacing: -0.01em; }
+.notice .grow { flex: 1; }
+.notice .small { font-size: 12px; }
+.notice .pill.urgent { font-size: 11px; padding: 2px 8px; border-radius: 999px; color: var(--warn); background: color-mix(in srgb, var(--warn) 15%, transparent); }
+.notice .x { border: 0; background: none; font-size: 20px; line-height: 1; color: var(--muted); padding: 0 4px; }
+.notice .x:hover { color: var(--ink); }
+.notice footer { display: flex; gap: 8px; margin-top: 8px; }
+.notice .src-grid { margin-top: 10px; }
+
+/* a notice whose basis was rejected: kept, visibly withdrawn, never silently removed */
+.notice.cancelled, .notice.updated { border-color: color-mix(in srgb, #ef4444 40%, var(--line)); }
+.notice.cancelled::before, .notice.updated::before { background: #ef4444; }
+.notice.cancelled .answer { opacity: 0.6; }
+.notice .seg.struck { text-decoration: line-through; opacity: 0.55; }
+.notice .pill.gone { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: #b42318; background: color-mix(in srgb, #ef4444 13%, transparent); }
+@media (prefers-color-scheme: dark) { .notice .pill.gone { color: #fca5a5; } }
+.notice .withdrawn { margin-top: 8px; padding: 9px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; background: color-mix(in srgb, #ef4444 8%, var(--panel)); }

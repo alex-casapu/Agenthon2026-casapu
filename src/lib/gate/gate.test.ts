@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { canonicalize, cpLength } from "../canon";
+import { DEMO_ENTITIES } from "../demo-entities";
+import { ENTITIES, registryOf } from "../entities";
 import { checkClaim } from ".";
 import { dateCandidates } from "./dates";
 import { locateQuote } from "./locate";
@@ -146,6 +148,7 @@ describe("checkClaim", () => {
 });
 
 describe("entity registry in the gate", () => {
+  const reg = registryOf([...ENTITIES, ...DEMO_ENTITIES]);
   const text = "Il lotto di semola è a 412 €/t, valida fino al 31 dicembre.";
   const src: Record<string, { canonical_text: string; occurred_at: string }> = { s1: { canonical_text: text, occurred_at: "2026-10-12T07:15:00Z" } };
   const get = (id: string) => src[id];
@@ -156,11 +159,11 @@ describe("entity registry in the gate", () => {
   });
 
   it("accepts registry ids", () => {
-    expect(checkClaim(input(), get, { entities: true }).ok).toBe(true);
+    expect(checkClaim(input(), get, { entities: reg }).ok).toBe(true);
   });
 
   it("rejects an unknown entity with the closest known ids, per field", () => {
-    const r = checkClaim(input({ supplier: "ent:fornitore_semola", item: "ent:made_up_thing" }), get, { entities: true });
+    const r = checkClaim(input({ supplier: "ent:fornitore_semola", item: "ent:made_up_thing" }), get, { entities: reg });
     if (r.ok) throw new Error("expected rejection");
     expect(r.errors.map((e) => e.field).sort()).toEqual(["item", "supplier"]);
     const supplier = r.errors.find((e) => e.field === "supplier")!;
@@ -175,7 +178,7 @@ describe("entity registry in the gate", () => {
       evidence: [{ source_id: "s1", quote: "è a 412 €/t" }],
       fields: { owner: "ent:pastaco", counterparty: "ent:unknown_party", action: "chiunque / anything at all" },
     };
-    const r = checkClaim(c, get, { entities: true });
+    const r = checkClaim(c, get, { entities: reg });
     if (r.ok) throw new Error("expected rejection");
     expect(r.errors).toHaveLength(1);
     expect(r.errors[0]).toMatchObject({ code: "unknown_entity", field: "counterparty" });
@@ -183,6 +186,7 @@ describe("entity registry in the gate", () => {
 
   it("does not apply to an audit: without the option, unknown ids pass (claims admitted before the registry)", () => {
     expect(checkClaim(input({ supplier: "ent:fornitore_semola" }), get).ok).toBe(true);
-    expect(checkClaim(input({ supplier: "ent:fornitore_semola" }), get, { entities: false }).ok).toBe(true);
+    expect(checkClaim(input({ supplier: "ent:fornitore_semola" }), get, {}).ok).toBe(true);
+    expect(checkClaim(input({ supplier: "ent:fornitore_semola" }), get, { entities: reg }).ok).toBe(false);
   });
 });

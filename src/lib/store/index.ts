@@ -5,12 +5,16 @@ import { CANON_VERSION, canonicalize, cpSlice } from "../canon";
 import { checkClaim, type GateError, type GateInput, type SourceView } from "../gate";
 import { canonicalJson, sha256 } from "../hash";
 import { ENTITIES } from "../entities";
-import { PRINCIPALS } from "../policy";
+import { getPrincipals } from "../policy-config";
 import { PREDICATES, getPredicate } from "../predicates";
 import { chainHash, GENESIS, recordRow, rowPayloadHash, type DB } from "./log";
+import { dbRegistry } from "./entities";
+import { recordPrincipals } from "./principals";
 import { migrate } from "./migrate";
 
 export type { DB } from "./log";
+export { recordPrincipals } from "./principals";
+export { admitEntity, dbRegistry, listEntities, seedEntities, type AdmitResult, type EntityDeclaration } from "./entities";
 
 // ---------------------------------------------------------------- open
 
@@ -62,7 +66,7 @@ function ensureVersioned(db: DB, spec: { table: string; idCol: string; label: st
 
 function ensureDefinitions(db: DB): void {
   ensureVersioned(db, { table: "predicates", idCol: "predicate_id", label: "Predicate", items: PREDICATES.map((d) => ({ id: d.id, version: d.version, def: d })) });
-  ensureVersioned(db, { table: "principals", idCol: "principal_id", label: "Principal", items: PRINCIPALS.map((d) => ({ id: d.id, version: 1, def: d })) });
+  recordPrincipals(db, getPrincipals());
   ensureVersioned(db, { table: "entities", idCol: "entity_id", label: "Entity", items: ENTITIES.map((d) => ({ id: d.id, version: d.version, def: d })) });
 }
 
@@ -147,13 +151,22 @@ export function findSourcesByExternalId(db: DB, kind: string, externalId: string
 
 // ---------------------------------------------------------------- claims
 
+/** The actor recorded when the policy, not a person, approves a claim. */
+export const TRUST_ACTOR = "policy:trust-by-default";
+
 export type SubmitResult =
-  | { ok: true; claim_id: string; duplicate: boolean }
+  | { ok: true; claim_id: string; duplicate: boolean; /** Approved on admission by the trust policy. */ trusted?: boolean }
   | { ok: false; errors: GateError[] };
 
 /** Gate, then persist quotes + claim + evidence + 'proposed' event atomically. */
-export function submitClaim(db: DB, input: GateInput, actor = "human:manual"): SubmitResult {
-  const res = checkClaim(input, (id) => sourceView(db, id), { entities: true });
+/**
+ * Gate, then persist quotes + claim + evidence + 'proposed' event atomically.
+ * With `trust`, the claim is approved in the same transaction by the policy (not a person): it is
+ * usable at once and a curator can still reject it. A claim that already exists is left as it is, so a
+ * rejection by a curator is never undone by reading the same fact again.
+ */
+export function submitClaim(db: DB, input: GateInput, actor = "human:manual", opts: { trust?: boolean } = {}): SubmitResult {
+  const res = checkClaim(input, (id) => sourceView(db, id), { entities: dbRegistry(db) });
   if (!res.ok) return res;
   const d = res.draft;
 
@@ -196,8 +209,9 @@ export function submitClaim(db: DB, input: GateInput, actor = "human:manual"): S
       recordRow(db, "claim_evidence", `${d.claim_id}:${q.quote_id}`);
     }
     insertEvent(db, d.claim_id, "proposed", actor);
+    if (opts.trust) insertEvent(db, d.claim_id, "approved", TRUST_ACTOR, "trusted by default: usable without curator review");
   })();
-  return { ok: true, claim_id: d.claim_id, duplicate: false };
+  return { ok: true, claim_id: d.claim_id, duplicate: false, ...(opts.trust ? { trusted: true } : {}) };
 }
 
 type EventType = "proposed" | "approved" | "rejected" | "superseded" | "retracted";
@@ -211,7 +225,7 @@ function insertEvent(db: DB, claimId: string, type: EventType, actor: string, re
 
 const TRANSITIONS: Record<string, EventType[]> = {
   proposed: ["approved", "rejected"],
-  approved: ["retracted", "superseded"],
+  approved: ["retracted", "rejected", "superseded"],
   rejected: [],
   retracted: [],
   superseded: [],
@@ -326,7 +340,7 @@ export function verify(db: DB): VerifyReport {
       else if (now !== e.payload_hash) problems.push(`log #${e.seq}: row ${e.tbl}/${e.row_id} was altered`);
     }
   }
-  for (const tbl of ["sources", "quotes", "predicates", "claims", "claim_evidence", "claim_events", "ingest_events", "extraction_runs", "principals", "entities", "schema_migrations"]) {
+  for (const tbl of ["sources", "quotes", "predicates", "claims", "claim_evidence", "claim_events", "ingest_events", "extraction_runs", "principals", "entities", "notices", "schema_migrations"]) {
     const n = (db.prepare(`SELECT COUNT(*) AS n FROM ${tbl}`).get() as { n: number }).n;
     if (n !== (perTable.get(tbl) ?? 0)) problems.push(`${tbl}: ${n} rows but ${perTable.get(tbl) ?? 0} log entries`);
   }

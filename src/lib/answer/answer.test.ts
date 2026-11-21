@@ -1,7 +1,8 @@
+import { memDb } from "../testkit";
 import { beforeEach, describe, expect, it } from "vitest";
 import { scriptedLlm } from "../extract/fake-llm";
-import { getPrincipal } from "../policy";
-import { insertSource, openDb, reviewClaim, submitClaim, type DB } from "../store";
+import { getPrincipal } from "../policy-config";
+import { insertSource, reviewClaim, submitClaim, type DB } from "../store";
 import { listClaimViews } from "../claims-view";
 import { answerQuestion, knowledgeFor } from "./answer";
 import type { LlmResponse } from "../llm";
@@ -21,7 +22,7 @@ function approve(db: DB, sentenceIncludes: string) {
 
 /** A small memory: one public approved claim, optionally finance-only ones, plus a proposed (unapproved) one. */
 function build(withFinance: boolean): DB {
-  const db = openDb(":memory:");
+  const db = memDb();
   const pub = insertSource(db, { kind: "news", external_id: "news1", occurred_at: "2026-11-21T07:00:00Z", raw: PUBLIC_TEXT, acl_labels: ["public"], meta: { title: "Semola +18%", domain: "mercato.example", reliability: "high" } }).source_id;
   submitClaim(db, { predicate_id: "spot_price", fields: { item: "ent:durum_semolina", amount: 502, currency: "EUR", per: "t", change_pct: 18 }, evidence: [{ source_id: pub, quote: "salito a 502 €/t, +18% in tre settimane" }] });
   approve(db, "502");
@@ -94,7 +95,7 @@ describe("answerQuestion", () => {
   });
 
   it("says I don't know, without calling the model, when nothing approved is visible", async () => {
-    const empty = openDb(":memory:");
+    const empty = memDb();
     const { llm, calls } = scriptedLlm([ans({ answerable: true, segments: [] })]);
     const r = await answerQuestion(empty, marta, Q, opts(llm));
     expect(r).toMatchObject({ idk: true, segments: [], citations: [], meta: { knowledge: 0, llm_calls: 0 } });
@@ -232,7 +233,7 @@ describe("answerQuestion", () => {
   });
 
   it("with a large memory, keeps the claims most relevant to the question", async () => {
-    const big = openDb(":memory:");
+    const big = memDb();
     const lines = Array.from({ length: 150 }, (_, i) => `Nota ${i}: il fornitore ${i === 77 ? "zebra" : "alfa" + i} consegna ${i + 1000} tonnellate.`);
     const sid = insertSource(big, { kind: "document", external_id: "bulk", occurred_at: "2026-11-01T00:00:00Z", raw: lines.join("\n"), acl_labels: ["public"] }).source_id;
     lines.forEach((l) => {

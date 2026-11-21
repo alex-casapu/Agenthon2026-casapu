@@ -1,6 +1,5 @@
 import { connection } from "next/server";
 import { knowledgeFor } from "@/lib/answer/answer";
-import { SUGGESTIONS } from "@/lib/answer/suggestions";
 import { principalFromRequest } from "@/lib/api-principal";
 import { getDb } from "@/lib/store";
 
@@ -17,6 +16,6 @@ export async function GET(req: Request) {
     principal,
     approved: approved.map((c) => ({ claim_id: c.claim_id, sentence: c.sentence, labels: c.labels })),
     pending,
-    suggestions: SUGGESTIONS[principal.id] ?? [],
+    suggestions: principal.suggestions ?? [],
   });
 }

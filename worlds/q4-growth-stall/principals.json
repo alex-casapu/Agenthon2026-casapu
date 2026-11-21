@@ -1,0 +1,45 @@
+[
+  {
+    "id": "priya",
+    "name": "Priya Raman",
+    "role": "CFO",
+    "clearances": [
+      "*"
+    ],
+    "curator": true,
+    "suggestions": [
+      "How far is the quarterly revenue forecast below the target?",
+      "What would the requested Hollis discount cost us per year?",
+      "What is our revenue forecast for the first quarter of 2027?"
+    ]
+  },
+  {
+    "id": "tom",
+    "name": "Tom Alvarez",
+    "role": "Head of Strategy",
+    "clearances": [
+      "public",
+      "board"
+    ],
+    "curator": false,
+    "suggestions": [
+      "By how much has our ARR grown over the last two years?",
+      "How much budget is reserved for growth initiatives?",
+      "What would the Telemark deal cost us in revenue share now, and until when is it valid?"
+    ]
+  },
+  {
+    "id": "jenna",
+    "name": "Jenna Okafor",
+    "role": "VP Sales",
+    "clearances": [
+      "public"
+    ],
+    "curator": false,
+    "suggestions": [
+      "What does Hollis Freight want in order to renew, and by when?",
+      "Is Hollis Freight switching to Routewise?",
+      "How far is the quarterly revenue forecast below the target?"
+    ]
+  }
+]

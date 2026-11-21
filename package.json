@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "db:reset": "rm -f data/brain.db data/brain.db-wal data/brain.db-shm",
+    "demo:load": "rm -f data/brain.db data/brain.db-wal data/brain.db-shm && mkdir -p data && cp demo/brain.db data/brain.db && cp demo/principals.json data/principals.json",
+    "db:reset": "rm -f data/brain.db data/brain.db-wal data/brain.db-shm data/principals.json",
     "test:cov": "vitest run --coverage --coverage.include=src/lib/** --coverage.include=src/app/api/** --coverage.reporter=text",
     "world:make": "tsx tools/worldgen/cli.ts make",
     "world:gen": "tsx tools/worldgen/cli.ts gen",
@@ -17,7 +18,8 @@
     "world:play": "tsx tools/worldgen/cli.ts play",
     "inbox:example": "mkdir -p data/inbox data/news data/docs && cp examples/inbox/*.md data/inbox/ && cp examples/news/*.md data/news/ && cp examples/docs/*.md data/docs/",
     "eval:extract": "vitest run --config vitest.eval.config.mts",
-    "stage:baseline": "mkdir -p data/inbox data/news data/docs && cp examples/docs/*.md data/docs/ && cp examples/inbox/20261012-0915-offerta-semola.md examples/inbox/20261103-0840-prezzo-bianchi.md data/inbox/ && cp examples/news/20261031-report-cereali-ottobre.md data/news/"
+    "stage:baseline": "mkdir -p data/inbox data/news data/docs && cp examples/docs/*.md data/docs/ && cp examples/inbox/20261012-0915-offerta-semola.md examples/inbox/20261103-0840-prezzo-bianchi.md data/inbox/ && cp examples/news/20261031-report-cereali-ottobre.md data/news/",
+    "world:principals": "tsx tools/worldgen/cli.ts principals"
   },
   "dependencies": {
     "better-sqlite3": "^13.2.0",

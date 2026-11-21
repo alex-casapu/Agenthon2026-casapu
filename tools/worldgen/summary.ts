@@ -26,10 +26,11 @@ export function buildSummary(c: Compiled, meta: { writer: string; attempts: Reco
   out.push(`Azienda: **${spec.company.name}** (${spec.company.description}). Lingua: \`${spec.language}\`. Data della simulazione: ${spec.today}. Dati sintetici.`, "");
 
   out.push("## Persone e ruoli", "");
-  out.push("| Persona | Ruolo | Voce |", "|---|---|---|");
-  for (const p of spec.people) out.push(`| ${cell(p.name)} | ${cell(p.role)} | ${cell(p.persona ?? "")} |`);
+  out.push("| Persona | Ruolo | Accesso | Voce |", "|---|---|---|---|");
+  for (const p of spec.people) out.push(`| ${cell(p.name)} | ${cell(p.role)} | ${p.access ?? "(esterna)"} | ${cell(p.persona ?? "")} |`);
   out.push("", "| Ruolo di accesso | Vede le etichette | Cura la memoria |", "|---|---|---|");
   for (const [r, v] of Object.entries(spec.roles)) out.push(`| ${r} | ${["public", ...v.sees].join(", ")} | ${v.curator ? "sì" : "no"} |`);
+  out.push("", "Le tre persone con accesso sono gli utenti del sistema: la loro configurazione è esportata in `principals.json`.");
   out.push("");
 
   out.push("## Tappe e materiali", "");

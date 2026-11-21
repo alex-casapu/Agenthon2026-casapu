@@ -1,4 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { writePrincipals } from "@/lib/policy-config";
 import type { LlmRequest } from "@/lib/llm";
 
 // The route calls defaultLlm(); give it a scripted model so no process is spawned.
@@ -15,7 +19,8 @@ vi.mock("@/lib/llm", () => ({
 }));
 vi.mock("next/server", () => ({ connection: async () => {} }));
 
-import { getDb, insertSource, reviewClaim, submitClaim } from "@/lib/store";
+import { DEMO_ENTITIES } from "@/lib/demo-entities";
+import { getDb, insertSource, reviewClaim, seedEntities, submitClaim } from "@/lib/store";
 import { listClaimViews } from "@/lib/claims-view";
 import { POST as chat } from "./chat/route";
 import { GET as knowledge } from "./chat/knowledge/route";
@@ -32,6 +37,7 @@ beforeEach(() => {
   script = () => ({ answerable: false, segments: [] });
 
   const db = getDb();
+  seedEntities(db, DEMO_ENTITIES);
   const pub = insertSource(db, { kind: "news", external_id: "n1", occurred_at: "2026-11-21T07:00:00Z", raw: "Il prezzo spot è salito a 502 €/t.", acl_labels: ["public"], meta: { title: "Semola" } }).source_id;
   const fin = insertSource(db, { kind: "document", external_id: "cq", occurred_at: "2026-01-15T00:00:00Z", raw: "Il contratto fissa il prezzo a 412 €/t.", acl_labels: ["finance"], meta: { title: "Contratto" } }).source_id;
   submitClaim(db, { predicate_id: "spot_price", fields: { item: "ent:durum_semolina", amount: 502, currency: "EUR", per: "t" }, evidence: [{ source_id: pub, quote: "salito a 502 €/t" }] });
@@ -101,5 +107,26 @@ describe("GET /api/chat/knowledge", () => {
     const luca = await (await knowledge(get("luca"))).json();
     expect(luca.approved).toHaveLength(2);
     expect((await (await knowledge(get("marta"))).json()).approved).toHaveLength(2);
+  });
+});
+
+describe("chat follows the world's configuration", () => {
+  const saved = process.env.BRAIN_PRINCIPALS;
+  afterEach(() => {
+    process.env.BRAIN_PRINCIPALS = saved;
+  });
+
+  it("opens with the starter questions the world gave that person, and treats a stale cookie as nobody", async () => {
+    process.env.BRAIN_PRINCIPALS = join(mkdtempSync(join(tmpdir(), "p-")), "principals.json");
+    writePrincipals([
+      { id: "elena", name: "Elena Marsh", role: "Procurement", clearances: ["*"], curator: true, suggestions: ["What is the delay?"] },
+      { id: "david", name: "David Okafor", role: "Finance", clearances: ["public", "finance"], curator: false },
+    ]);
+    const k = await (await knowledge(get("elena"))).json();
+    expect(k.principal).toMatchObject({ id: "elena", role: "Procurement" });
+    expect(k.suggestions).toEqual(["What is the delay?"]);
+    expect((await (await knowledge(get("david"))).json()).suggestions).toEqual([]);
+    expect((await knowledge(get("sara"))).status).toBe(403); // sara belonged to the previous world
+    expect((await chat(post(ask("hi"), "marta"))).status).toBe(403);
   });
 });

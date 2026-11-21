@@ -1,7 +1,9 @@
-import { insertSource, submitClaim, type DB } from "./store";
+import { DEMO_ENTITIES } from "./demo-entities";
+import { insertSource, seedEntities, submitClaim, type DB } from "./store";
 
 /** Throwaway demo data to exercise the core. Idempotent. */
 export function loadSample(db: DB): { sources: number; claims: number } {
+  seedEntities(db, DEMO_ENTITIES);
   const en = insertSource(db, {
     kind: "email",
     external_id: "sample-en-1",

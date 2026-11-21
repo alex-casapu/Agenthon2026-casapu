@@ -20,9 +20,9 @@
     "sales": { "sees": [] }
   },
   "people": [
-    { "key": "dana", "name": "Dana Hughes", "email": "dana.hughes@halden-instruments.example", "role": "Operations lead", "persona": "Direct and practical, short sentences, signs with first name only." },
-    { "key": "tom", "name": "Tom Reyes", "email": "tom.reyes@halden-instruments.example", "role": "Finance controller", "persona": "Careful and formal, always precise about figures." },
-    { "key": "priya", "name": "Priya Nair", "email": "priya.nair@halden-instruments.example", "role": "Sales manager", "persona": "Chatty and informal, passes on things she hears." },
+    { "key": "dana", "name": "Dana Hughes", "email": "dana.hughes@halden-instruments.example", "role": "Operations lead", "access": "ops", "persona": "Direct and practical, short sentences, signs with first name only." },
+    { "key": "tom", "name": "Tom Reyes", "email": "tom.reyes@halden-instruments.example", "role": "Finance controller", "access": "finance", "persona": "Careful and formal, always precise about figures." },
+    { "key": "priya", "name": "Priya Nair", "email": "priya.nair@halden-instruments.example", "role": "Sales manager", "access": "sales", "persona": "Chatty and informal, passes on things she hears." },
     { "key": "marcus", "name": "Marcus Lee", "email": "marcus.lee@kestrelcomponents.example", "role": "Account manager, Kestrel Components", "persona": "Polite supplier tone, apologetic, brief." }
   ],
   "facts": [

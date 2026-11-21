@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { listClaimViews, prettyEntity, sentenceFor } from "./claims-view";
 import { loadSample } from "./sample";
-import { insertSource, openDb, reviewClaim, submitClaim, type DB } from "./store";
+import { admitEntity, insertSource, openDb, reviewClaim, submitClaim, type DB } from "./store";
 
 describe("prettyEntity", () => {
   it("turns entity ids into names", () => {
@@ -50,7 +50,7 @@ describe("listClaimViews", () => {
     const views = listClaimViews(db);
     expect(views).toHaveLength(3);
     const it = views.find((v) => v.sentence.includes("Molino Bianchi"))!;
-    expect(it.sentence).toBe("Molino Bianchi prices Durum Semolina at 1,250 EUR/t (minimum order 500 t, valid until 2027-01-15)");
+    expect(it.sentence).toBe("Molino Bianchi S.r.l. prices Durum semolina at 1,250 EUR/t (minimum order 500 t, valid until 2027-01-15)");
     expect(it.predicate_id).toBe("supplier_price");
     expect(it.predicate_version).toBe(2);
     expect(it.status).toBe("proposed");
@@ -94,5 +94,21 @@ describe("listClaimViews", () => {
 
   it("an empty database has no claims", () => {
     expect(listClaimViews(openDb(":memory:"))).toEqual([]);
+  });
+
+  it("names entities as the sources do, not as a prettified id", () => {
+    db = openDb(":memory:"); // nothing seeded: every name is discovered
+    const sid = insertSource(db, { kind: "email", external_id: "nm", author: "luca@mulino-santa-chiara.example", occurred_at: "2026-11-23T08:00:00Z", raw: "Il prezzo della semola di grano duro è 480 €/t, fisso fino al 31 dicembre." }).source_id;
+    admitEntity(db, { name: "Mulino Santa Chiara S.r.l.", kind: "organization" }, sid);
+    admitEntity(db, { name: "semola di grano duro", kind: "item", quote: "della semola di grano duro è 480 €/t" }, sid);
+    submitClaim(db, {
+      predicate_id: "supplier_price",
+      fields: { supplier: "ent:mulino_santa_chiara", item: "ent:semola_di_grano_duro", amount: 480, currency: "EUR", per: "t" },
+      evidence: [{ source_id: sid, quote: "della semola di grano duro è 480 €/t" }],
+    });
+    const v = listClaimViews(db).find((c) => c.sentence.includes("480"))!;
+    expect(v.sentence).toBe("Mulino Santa Chiara S.r.l. prices semola di grano duro at 480 EUR/t");
+    // an id nobody registered still reads sensibly
+    expect(sentenceFor("demand", { item: "ent:unregistered_thing", amount: 1, unit: "t", period: "month" }, (v) => `<${v}>`)).toBe("Requirement needs 1 t of <ent:unregistered_thing> per month");
   });
 });

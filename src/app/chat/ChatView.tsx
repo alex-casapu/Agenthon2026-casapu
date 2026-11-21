@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { SUGGESTIONS } from "@/lib/answer/suggestions";
-import { PRINCIPALS, getPrincipal } from "@/lib/policy";
-import { setPrincipalId, usePrincipalId } from "../components/principal";
+import { setPrincipalId, useActor } from "../components/principal";
 import { AssistantMessage, Typing, UserMessage, type Msg } from "./Message";
+import { NoticeFeed, type Notice } from "./Notices";
 import { ArrowIcon, Avatar, BrainMark, PlusIcon, SendIcon } from "./ui";
 
 type Knowledge = { approved: { claim_id: string; sentence: string; labels: string[] }[]; pending: number };
@@ -51,8 +50,8 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const clearanceLabel = (c: string[]) => (c.includes("*") ? ["everything"] : c);
 
 export default function ChatView() {
-  const pid = usePrincipalId();
-  const me = getPrincipal(pid);
+  const { pid, me, principals } = useActor();
+  const people = principals ?? [];
   const messages = useChat(pid);
 
   const [know, setKnow] = useState<{ pid: string; data: Knowledge } | null>(null);
@@ -60,6 +59,7 @@ export default function ChatView() {
   const [pending, setPending] = useState<string | null>(null);
   const [phase, setPhase] = useState(0);
   const [input, setInput] = useState("");
+  const [heads, setHeads] = useState<{ pid: string; list: Notice[] } | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLTextAreaElement>(null);
 
@@ -72,6 +72,26 @@ export default function ChatView() {
       .then((d) => { if (alive && d.approved) setKnow({ pid, data: d }); });
     return () => { alive = false; };
   }, [pid, me, tick]);
+
+  // what the memory has decided to tell this person unprompted; checked every few seconds so a new
+  // source arriving during a demo shows up on its own
+  useEffect(() => {
+    if (!me) return;
+    let alive = true;
+    const load = () =>
+      fetch("/api/notices")
+        .then((r) => r.json())
+        .then((d) => { if (alive && d.notices) setHeads({ pid, list: d.notices }); })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 6000);
+    return () => { alive = false; clearInterval(t); };
+  }, [pid, me]);
+
+  async function dismiss(id: string) {
+    setHeads((h) => (h ? { ...h, list: h.list.map((n) => (n.notice_id === id ? { ...n, seen: true } : n)) } : h));
+    await fetch("/api/notices/seen", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ids: [id] }) }).catch(() => {});
+  }
 
   useEffect(() => {
     const bump = () => setTick((n) => n + 1);
@@ -90,6 +110,7 @@ export default function ChatView() {
   }, [messages.length, pending]);
 
   const knowledge = know && know.pid === pid ? know.data : null;
+  const notices = heads && heads.pid === pid ? heads.list : [];
   const waiting = pending === pid;
 
   async function send(text: string) {
@@ -119,8 +140,8 @@ export default function ChatView() {
     }
   }
 
-  const phases = [`Reading ${knowledge?.approved.length ?? "your"} approved claims…`, "Writing an answer from them…", "Checking every figure and citation…"];
-  const suggestions = me ? SUGGESTIONS[me.id] ?? [] : [];
+  const phases = [`Reading ${knowledge?.approved.length ?? "your"} claims…`, "Writing an answer from them…", "Checking every figure and citation…"];
+  const suggestions = me?.suggestions ?? [];
 
   return (
     <div className="chat">
@@ -133,9 +154,9 @@ export default function ChatView() {
 
         <div className="side-label">Who&apos;s asking</div>
         <div className="people">
-          {PRINCIPALS.map((p) => (
+          {people.map((p) => (
             <button key={p.id} className={`person${p.id === pid ? " on" : ""}`} onClick={() => setPrincipalId(p.id)} aria-pressed={p.id === pid}>
-              <Avatar id={p.id} />
+              <Avatar id={p.id} name={p.name} />
               <span className="person-text">
                 <b>{p.name}</b>
                 <small>{p.role}{p.curator ? " · curator" : ""}</small>
@@ -150,8 +171,8 @@ export default function ChatView() {
             <div className="side-label">What I can use</div>
             <div className="kcard">
               <div className="kbig">{knowledge ? knowledge.approved.length : "–"}</div>
-              <div className="ksub">approved claims you may see</div>
-              {knowledge && knowledge.pending > 0 && <div className="kpending">{knowledge.pending} more awaiting approval, not usable yet</div>}
+              <div className="ksub">claims you may use</div>
+              {knowledge && knowledge.pending > 0 && <div className="kpending">{knowledge.pending} more waiting for a curator, not usable yet</div>}
             </div>
             {knowledge && knowledge.approved.length > 0 && (
               <details className="klist">
@@ -168,7 +189,7 @@ export default function ChatView() {
             )}
           </>
         )}
-        <p className="fineprint">Only approved knowledge you are cleared for ever reaches the model. Switch identity to see the difference.</p>
+        <p className="fineprint">Only claims you are cleared for, and that no curator has rejected, ever reach the model. Switch identity to see the difference.</p>
       </aside>
 
       {/* ---------------------------------------------------------------- main */}
@@ -176,7 +197,7 @@ export default function ChatView() {
         <header className="chead">
           {me ? (
             <div className="chead-who">
-              <Avatar id={me.id} size={34} />
+              <Avatar id={me.id} name={me.name} size={34} />
               <div>
                 <div className="ctitle">Chatting as {me.name}</div>
                 <div className="csub">{me.role} · can read {clearanceLabel(me.clearances).join(", ")}</div>
@@ -198,9 +219,9 @@ export default function ChatView() {
                 <h1>Who&apos;s asking?</h1>
                 <p>The memory answers differently depending on who you are. Pick a colleague to begin.</p>
                 <div className="gate-people">
-                  {PRINCIPALS.map((p) => (
+                  {people.map((p) => (
                     <button key={p.id} className="gate-card" onClick={() => setPrincipalId(p.id)}>
-                      <Avatar id={p.id} size={52} />
+                      <Avatar id={p.id} name={p.name} size={52} />
                       <b>{p.name}</b>
                       <small>{p.role}</small>
                       <span className="chips">{clearanceLabel(p.clearances).map((c) => <i key={c}>{c}</i>)}</span>
@@ -210,14 +231,16 @@ export default function ChatView() {
               </div>
             )}
 
+            {me && <NoticeFeed notices={notices} onDismiss={dismiss} onAsk={send} />}
+
             {me && messages.length === 0 && !waiting && (
               <div className="empty">
                 <h1>Hi {me.name.split(" ")[0]}.</h1>
-                <p>Ask anything about what the team knows. Answers come only from approved knowledge you have access to, and every one cites its sources.</p>
+                <p>Ask anything about what the team knows. Answers come only from claims you have access to, and every one cites its sources.</p>
                 {knowledge && knowledge.approved.length === 0 && (
                   <div className="callout">
-                    Nothing is approved for you yet, so every answer will be &ldquo;I don&apos;t know&rdquo;.{" "}
-                    <Link href="/claims">Approve claims on the Claims page</Link> (as Marta) to give the memory something to say.
+                    No claims are available to you yet, so every answer will be &ldquo;I don&apos;t know&rdquo;. Add sources to the inbox folders, or{" "}
+                    <Link href="/claims">review the claims</Link> that are waiting.
                   </div>
                 )}
                 <div className="suggest">
@@ -231,7 +254,7 @@ export default function ChatView() {
               </div>
             )}
 
-            {me && messages.map((m) => (m.role === "user" ? <UserMessage key={m.id} m={m} who={me.id} /> : <AssistantMessage key={m.id} m={m} onAsk={send} />))}
+            {me && messages.map((m) => (m.role === "user" ? <UserMessage key={m.id} m={m} who={me.id} name={me.name} /> : <AssistantMessage key={m.id} m={m} onAsk={send} />))}
             {me && waiting && <Typing phase={phases[phase % phases.length]} />}
           </div>
         </div>

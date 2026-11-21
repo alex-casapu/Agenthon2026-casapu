@@ -24,6 +24,11 @@ const Person = z
     /** Must end in `.example`. */
     email: z.string().regex(/^[^\s@]+@[^\s@]+\.example$/, "address ending in .example"),
     role: z.string().min(1),
+    /**
+     * The access role this person acts as in the system (a key of `roles`). Internal staff who use the
+     * system have one, exactly one per role; outside people (suppliers, journalists) have none.
+     */
+    access: ident.optional(),
     /** How this person writes: tone, habits, level of detail. The writer plays this person. */
     persona: z.string().optional(),
   })

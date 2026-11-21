@@ -1,0 +1,44 @@
+[
+  {
+    "id": "giulia",
+    "name": "Giulia Ferri",
+    "role": "Responsabile acquisti",
+    "clearances": [
+      "*"
+    ],
+    "curator": true,
+    "suggestions": [
+      "Qual è il prezzo della semola previsto dal contratto in vigore?",
+      "Quanti giorni di copertura abbiamo con la scorta attuale di semola?",
+      "Fino a quando è valida l'offerta del mulino alternativo e per quale quantità?",
+      "È vero che la semola arriverà a 700 €/t?"
+    ]
+  },
+  {
+    "id": "marco",
+    "name": "Marco Bellini",
+    "role": "Controller finanziario",
+    "clearances": [
+      "public",
+      "finance"
+    ],
+    "curator": false,
+    "suggestions": [
+      "Quanto costerebbe in più ogni mese dal rinnovo con la quotazione della stampa?",
+      "Con la quotazione corretta, di quanto aumenta il costo mensile e di che percentuale?"
+    ]
+  },
+  {
+    "id": "sara",
+    "name": "Sara Conti",
+    "role": "Responsabile commerciale",
+    "clearances": [
+      "public"
+    ],
+    "curator": false,
+    "suggestions": [
+      "A quanto è salita la quotazione della semola secondo la stampa?",
+      "Qual è il prezzo fisso del nostro contratto di fornitura?"
+    ]
+  }
+]

@@ -1,11 +1,14 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { splitFrontMatter } from "../../src/lib/ingest/common";
+import type { Principal } from "../../src/lib/policy";
+import { writePrincipals } from "../../src/lib/policy-config";
 import { buildAnswerKey } from "./answers";
 import { checkBody, parseFile } from "./check";
 import type { Compiled } from "./compile";
 import { parseSpec, type ScenarioSpec } from "./spec";
 import type { Generated } from "./generate";
+import { principalsOf } from "./principals";
 import { buildSummary } from "./summary";
 import { KIND_DIR, KINDS, pieceId, type Piece, type World } from "./types";
 
@@ -13,6 +16,7 @@ const mdFiles = (dir: string): string[] =>
   existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".md") && !f.startsWith("_") && !f.startsWith(".")).sort() : [];
 
 export const SPEC_FILE = "scenario.json";
+export const PRINCIPALS_FILE = "principals.json";
 
 /** Reads and validates `<dir>/scenario.json`. */
 export function readSpec(file: string): ScenarioSpec {
@@ -33,6 +37,7 @@ export function writeWorld(c: Compiled, files: Generated[], outDir: string, meta
     writeFileSync(abs, f.text);
   }
   writeFileSync(join(outDir, SPEC_FILE), JSON.stringify(c.spec, null, 2) + "\n");
+  writeFileSync(join(outDir, PRINCIPALS_FILE), JSON.stringify(principalsOf(c.spec), null, 2) + "\n");
   writeFileSync(join(outDir, "ANSWERS.json"), JSON.stringify(buildAnswerKey(c), null, 2) + "\n");
   writeFileSync(join(outDir, "SUMMARY.md"), buildSummary(c, { writer: meta.writer, attempts: Object.fromEntries(files.map((f) => [f.id, f.attempts])) }));
 }
@@ -106,4 +111,37 @@ export function playTier(tier: string, worldDir: string, targets: PlayTargets): 
     }
   }
   return out;
+}
+
+/** Writes `principals.json` from an existing scenario (for worlds generated before it was exported). */
+export function writeWorldPrincipals(dir: string): Principal[] {
+  const list = principalsOf(readSpec(join(dir, SPEC_FILE)));
+  writeFileSync(join(dir, PRINCIPALS_FILE), JSON.stringify(list, null, 2) + "\n");
+  return list;
+}
+
+/** The exported principals must exist and match what the scenario says. */
+export function checkPrincipals(spec: ScenarioSpec, dir: string): string[] {
+  const file = join(dir, PRINCIPALS_FILE);
+  if (!existsSync(file)) return [`${PRINCIPALS_FILE} is missing (run: world:principals ${relative(process.cwd(), dir) || dir})`];
+  let expected: Principal[];
+  try {
+    expected = principalsOf(spec);
+  } catch (e) {
+    return [(e as Error).message];
+  }
+  let actual: unknown;
+  try {
+    actual = JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    return [`${PRINCIPALS_FILE} is not valid JSON`];
+  }
+  return JSON.stringify(actual) === JSON.stringify(expected) ? [] : [`${PRINCIPALS_FILE} does not match the scenario (regenerate it with world:principals)`];
+}
+
+/** Makes this world's people the system's principals: validates and writes the app's configuration. */
+export function loadPrincipals(dir: string): Principal[] {
+  const file = join(dir, PRINCIPALS_FILE);
+  const list: unknown = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : principalsOf(readSpec(join(dir, SPEC_FILE)));
+  return writePrincipals(list);
 }

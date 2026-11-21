@@ -45,21 +45,24 @@
       "name": "Giulia Ferri",
       "email": "giulia.ferri@pastificio-valdorcia.example",
       "role": "Responsabile acquisti",
-      "persona": "Pratica e diretta, frasi brevi, firma solo con il nome."
+      "persona": "Pratica e diretta, frasi brevi, firma solo con il nome.",
+      "access": "acquisti"
     },
     {
       "key": "marco",
       "name": "Marco Bellini",
       "email": "marco.bellini@pastificio-valdorcia.example",
       "role": "Controller finanziario",
-      "persona": "Formale e preciso, cita sempre le cifre con l'unità di misura, chiude con 'Cordiali saluti'."
+      "persona": "Formale e preciso, cita sempre le cifre con l'unità di misura, chiude con 'Cordiali saluti'.",
+      "access": "finanza"
     },
     {
       "key": "sara",
       "name": "Sara Conti",
       "email": "sara.conti@pastificio-valdorcia.example",
       "role": "Responsabile commerciale",
-      "persona": "Loquace e informale, riporta ciò che sente in giro, usa spesso i puntini di sospensione."
+      "persona": "Loquace e informale, riporta ciò che sente in giro, usa spesso i puntini di sospensione.",
+      "access": "commerciale"
     },
     {
       "key": "luca",

@@ -64,7 +64,7 @@ export default function InboxView() {
       </div>
       <div className="gridwrap">
         <table className="grid">
-          <thead><tr><th>#</th><th>at</th><th>kind</th><th>source</th><th>status</th><th>calls</th><th>proposed</th><th>dup</th><th>rejected</th><th>model</th><th>cost $</th><th>sec</th><th>error</th></tr></thead>
+          <thead><tr><th>#</th><th>at</th><th>kind</th><th>source</th><th>status</th><th>calls</th><th>new</th><th>dup</th><th>rejected</th><th>model</th><th>cost $</th><th>sec</th><th>error</th></tr></thead>
           <tbody>
             {st.extraction.runs.map((r) => (
               <tr key={r.seq} style={{ cursor: "default" }}>
