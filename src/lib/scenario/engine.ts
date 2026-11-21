@@ -202,12 +202,11 @@ function review(s: State, id: string, decision: "approve" | "reject", by: RoleId
 const cites = (role: RoleId, id: string) => evidenceRoots(id).filter((e) => canSee(role, e));
 
 const unknown = (note?: string): AskResult => ({ kind: "unknown", text: "I don't know.", note, citations: [] });
-const unauthorized = (role: RoleId): AskResult => ({
-  kind: "unauthorized",
-  text: "Not authorized.",
-  note: `This information exists, but it isn't visible to your role (${ROLES[role].title}).`,
-  citations: [],
-});
+/**
+ * Missing, not yet arrived and not visible to the asker all give this exact answer. The agent of a
+ * person only knows what that person may know, so it never confirms that something they can't see exists.
+ */
+const nothing = (): AskResult => unknown("There is no evidence about this.");
 
 type Intent = "inject" | "why" | "approve_it" | "foreign" | "canada" | "contract" | "stock" | "cost" | "price" | "other";
 
@@ -227,9 +226,8 @@ export function intent(q: string): Intent {
 /** Look up the newest approved memory among `ids`; otherwise say why there is none. */
 function fromMemory(s: State, role: RoleId, ids: string[]): AskResult {
   const arrived = ids.filter((id) => isArrived(s, id));
-  if (arrived.length === 0) return unknown();
   const visible = arrived.filter((id) => canSee(role, id));
-  if (visible.length === 0) return unauthorized(role);
+  if (visible.length === 0) return nothing();
 
   const ok = visible.find((id) => s.nodes[id].status === "approved");
   if (ok) {
@@ -256,9 +254,8 @@ function fromMemory(s: State, role: RoleId, ids: string[]): AskResult {
 function whyBought(s: State, role: RoleId): AskResult {
   const ids = ["AZ-02", "AZ-01"];
   const arrived = ids.filter((id) => isArrived(s, id));
-  if (arrived.length === 0) return unknown("No purchase has been made.");
   const visible = arrived.filter((id) => canSee(role, id));
-  if (visible.length === 0) return unauthorized(role);
+  if (visible.length === 0) return nothing();
   const done = visible.find((id) => s.nodes[id].status === "approved");
   if (!done) return unknown("No purchase has been made yet. An action is awaiting approval.");
   const st = s.nodes[done];
@@ -282,7 +279,7 @@ export function answer(s: State, role: RoleId, q: string): AskResult {
     case "why":
       return whyBought(s, role);
     case "foreign":
-      return unknown("There is no evidence about this.");
+      return nothing();
     case "canada":
       return fromMemory(s, role, ["PR-03"]);
     case "contract":
@@ -319,7 +316,7 @@ export function checks(s: State): Record<number, boolean> {
   return {
     1: s.events.includes("report"),
     2: people.some((e) => e.text.startsWith("Approved")) && people.some((e) => e.text.startsWith("Rejected")),
-    3: results.some((r) => r.kind === "unauthorized"),
+    3: s.split.some((e) => e.finance.kind === "answer" && e.production.kind === "unknown"),
     4: results.some((r) => r.kind === "answer" && r.citations.length > 0),
     5: results.some((r) => r.kind === "unknown"),
     6: s.orders.length > 0,

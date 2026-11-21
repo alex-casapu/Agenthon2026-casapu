@@ -20,7 +20,7 @@ export default function TopBar() {
           const href = `/slides/${s.slug}`;
           return (
             <Link key={s.slug} href={href} title={`${i + 1}. ${s.title}`} aria-label={`Slide ${i + 1}: ${s.title}`} className={path === href ? "active" : ""}>
-              {SLIDE_ICONS[s.slug]}
+              {SLIDE_ICONS[s.slug] ?? <span aria-hidden style={{ fontSize: 9 }}>●</span>}
               <span className="num">{i + 1}</span>
             </Link>
           );

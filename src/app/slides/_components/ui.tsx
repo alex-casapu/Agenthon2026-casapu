@@ -83,13 +83,13 @@ export function SourceDrawer({ id, onClose }: { id: string | null; onClose: () =
   );
 }
 
-const RESULT_BADGE: Record<AskResult["kind"], string> = { answer: "Answer", unknown: "I don't know", unauthorized: "Not authorized", refusal: "Can't do that" };
+const RESULT_BADGE: Record<AskResult["kind"], string> = { answer: "Answer", unknown: "I don't know", refusal: "Can't do that" };
 
 export function AnswerBubble({ r, onCite, delayed }: { r: AskResult; onCite: (id: string) => void; delayed?: boolean }) {
   return (
     <div className={`sl-bubble agent res-${r.kind}${delayed ? " second" : ""}`}>
       <div className="row">
-        <span className={`sl-badge res-${r.kind}`}>{r.kind === "unauthorized" ? "🔒 " : ""}{RESULT_BADGE[r.kind]}</span>
+        <span className={`sl-badge res-${r.kind}`}>{RESULT_BADGE[r.kind]}</span>
         {r.approvedBy && <span className="muted small">Approved by {r.approvedBy}{r.approvedAt ? ` · ${r.approvedAt}` : ""}</span>}
       </div>
       <p className="sl-answer">{r.text}</p>

@@ -93,7 +93,7 @@ export default function CorrectionSlide() {
       </p>
 
       {!started ? (
-        <div className="sl-empty">Nothing to show yet. The market report hasn’t arrived (slide 3, press E).</div>
+        <div className="sl-empty">Nothing to show yet. The market report hasn’t arrived (press E on “It speaks first”).</div>
       ) : (
         <div className="sl-graphgrid">
           <div style={{ padding: "2em 3em 0 0" }}>

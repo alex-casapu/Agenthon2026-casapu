@@ -16,11 +16,11 @@ export default function ApprovalsSlide() {
 
   return (
     <div>
-      <div className="sl-eyebrow">Check 6 · It only proposes</div>
+      <div className="sl-eyebrow">The world, and the one thing that can change it</div>
       <h1>{done ? "Approved by a person. Only now does the order exist." : "It proposes. Nothing happens until a person approves."}</h1>
       <div className="sl-appgrid">
         <div style={{ display: "grid", gap: "1em" }}>
-          {actions.length === 0 && <div className="sl-empty">No action proposed yet. The market report hasn’t arrived (slide 3, press E).</div>}
+          {actions.length === 0 && <div className="sl-empty">No action proposed yet. The market report hasn’t arrived (press E on “It speaks first”).</div>}
           {actions.map((id) => {
             const n = NODES[id];
             const st = s.nodes[id];

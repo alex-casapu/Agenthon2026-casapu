@@ -24,7 +24,7 @@ export default function AskSlide() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div className="sl-eyebrow">Check 4 · Cites · Check 5 · Admits gaps</div>
+      <div className="sl-eyebrow">Ask the memory</div>
       <h1 style={{ fontSize: "1.8em" }}>Ask it anything. It answers from approved memory, or says it doesn’t know.</h1>
       <div className="sl-askgrid" style={{ flex: 1 }}>
         <div className="sl-chat">

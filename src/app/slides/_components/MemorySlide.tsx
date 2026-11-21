@@ -79,13 +79,13 @@ export default function MemorySlide() {
 
   return (
     <div>
-      <div className="sl-eyebrow">Check 2 · People curate the memory</div>
+      <div className="sl-eyebrow">Procurement · curating the memory</div>
       <h1>Nothing becomes memory until a person says so.</h1>
       <p className="sl-lead">Every proposal carries its quote and what the machine already verified. The only thing left for you is the judgement call.</p>
       <div className="sl-grid2">
         <div className="sl-props">
           {items.length === 0 ? (
-            <div className="sl-empty">Nothing to review yet. The market report hasn’t arrived (slide 3, press E).</div>
+            <div className="sl-empty">Nothing to review yet. The market report hasn’t arrived (press E on “It speaks first”).</div>
           ) : (
             items.map((id) => <Proposal key={id} id={id} s={s} onOpen={setSrc} />)
           )}
