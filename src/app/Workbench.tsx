@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PREDICATES } from "@/lib/predicates";
+import { PREDICATES, latestPredicates } from "@/lib/predicates";
+import { Highlighted } from "./components/Highlighted";
 
 type Evidence = { quote_id: string; source_id: string; start: number; end: number; text: string; external_id: string; author: string | null };
 type Claim = {
@@ -18,20 +19,6 @@ type GateErr = { code: string; field?: string; message: string };
 async function post(url: string, body?: unknown) {
   const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
   return { status: r.status, data: await r.json() };
-}
-
-function Highlighted({ text, ranges }: { text: string; ranges: { start: number; end: number }[] }) {
-  const chars = Array.from(text);
-  const cuts = [...ranges].sort((a, b) => a.start - b.start);
-  const out: React.ReactNode[] = [];
-  let pos = 0;
-  cuts.forEach((r, i) => {
-    out.push(chars.slice(pos, r.start).join(""));
-    out.push(<mark key={i}>{chars.slice(r.start, r.end).join("")}</mark>);
-    pos = r.end;
-  });
-  out.push(chars.slice(pos).join(""));
-  return <>{out}</>;
 }
 
 function ClaimCard({ c, selected, onSelect, onReview }: { c: Claim; selected: boolean; onSelect: () => void; onReview: (t: "approved" | "rejected" | "retracted") => void }) {
@@ -87,7 +74,7 @@ export default function Workbench() {
   const [errors, setErrors] = useState<GateErr[] | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
-  const [predId, setPredId] = useState(PREDICATES[0].id);
+  const [predId, setPredId] = useState(latestPredicates()[0].id);
   const [sourceId, setSourceId] = useState("");
   const [quote, setQuote] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -99,7 +86,7 @@ export default function Workbench() {
     return () => { live = false; };
   }, []);
 
-  const pred = PREDICATES.find((p) => p.id === predId)!;
+  const pred = latestPredicates().find((p) => p.id === predId)!;
   const selectedClaim = state?.claims.find((c) => c.claim_id === selected);
   const effectiveSource = sourceId || state?.sources[0]?.source_id || "";
 
@@ -188,7 +175,7 @@ export default function Workbench() {
             <summary>Propose a claim (through the gate)</summary>
             <div className="form">
               <select value={predId} onChange={(e) => { setPredId(e.target.value); setFields({}); setErrors(null); }}>
-                {PREDICATES.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
+                {latestPredicates().map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
               </select>
               <p className="muted small">{pred.description}</p>
               <select value={effectiveSource} onChange={(e) => setSourceId(e.target.value)}>

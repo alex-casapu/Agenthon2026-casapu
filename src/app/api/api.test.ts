@@ -12,7 +12,9 @@ import { GET as getSchema } from "./debug/schema/route";
 import { GET as getRows } from "./debug/rows/route";
 import { POST as postSql } from "./debug/sql/route";
 import { GET as getVerify } from "./debug/verify/route";
+import { GET as getClaimViews } from "./debug/claims/route";
 import { POST as postScan } from "./ingest/scan/route";
+import { POST as postExtract } from "./extract/route";
 import { GET as getIngestStatus } from "./ingest/status/route";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -111,6 +113,15 @@ describe("API", () => {
       expect(v.coverage.every((c: { rows: number; logged: number }) => c.rows === c.logged)).toBe(true);
     });
 
+    it("serves human-friendly claim views", async () => {
+      await postSeed();
+      const views = await (await getClaimViews()).json();
+      expect(views).toHaveLength(3);
+      expect(views[0]).toMatchObject({ status: "proposed" });
+      expect(typeof views[0].sentence).toBe("string");
+      expect(views[0].evidence[0].source.external_id).toMatch(/^sample-/);
+    });
+
     it("rejects bad input with 400, never 500", async () => {
       expect((await getRows(get("/api/debug/rows"))).status).toBe(400);
       expect((await getRows(get("/api/debug/rows?table=nope"))).status).toBe(400);
@@ -148,6 +159,22 @@ describe("API", () => {
         delete process.env.BRAIN_INBOX;
         delete process.env.BRAIN_NEWS;
         delete process.env.BRAIN_DOCS;
+      }
+    });
+  });
+
+  describe("extract route", () => {
+    it("validates input and respects the off switch", async () => {
+      process.env.BRAIN_EXTRACT = "off";
+      try {
+        expect((await postExtract(json("/api/extract", { source_id: 5 }))).status).toBe(400);
+        const off = await postExtract(json("/api/extract", {}));
+        expect(off.status).toBe(409);
+        expect((await off.json()).error).toMatch(/off/);
+        const st = await (await getIngestStatus()).json();
+        expect(st.extraction).toMatchObject({ enabled: false, queue: null, runs: [] });
+      } finally {
+        delete process.env.BRAIN_EXTRACT;
       }
     });
   });

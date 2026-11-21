@@ -311,7 +311,7 @@ export function verify(db: DB): VerifyReport {
       else if (now !== e.payload_hash) problems.push(`log #${e.seq}: row ${e.tbl}/${e.row_id} was altered`);
     }
   }
-  for (const tbl of ["sources", "quotes", "predicates", "claims", "claim_evidence", "claim_events", "ingest_events", "schema_migrations"]) {
+  for (const tbl of ["sources", "quotes", "predicates", "claims", "claim_evidence", "claim_events", "ingest_events", "extraction_runs", "schema_migrations"]) {
     const n = (db.prepare(`SELECT COUNT(*) AS n FROM ${tbl}`).get() as { n: number }).n;
     if (n !== (perTable.get(tbl) ?? 0)) problems.push(`${tbl}: ${n} rows but ${perTable.get(tbl) ?? 0} log entries`);
   }

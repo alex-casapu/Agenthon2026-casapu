@@ -48,9 +48,10 @@ TypeScript end to end · Next.js (web is the UI) · SQLite via `better-sqlite3` 
 | Email source contract (`docs/EMAIL_CONTRACT.md`): Markdown + YAML header, folder inbox, live watcher, append-only ingest ledger, Inbox tab | done |
 | News source contract (`docs/NEWS_CONTRACT.md`): same mechanics, `domain` as unit of source trust, `corrects` link | done |
 | Document source contract (`docs/DOCUMENT_CONTRACT.md`): contracts, invoices, reports, exports; `doc_type`, `supersedes` versioning, tables citable per row | done |
+| LLM extraction: one Claude CLI call per source over the whole vocabulary, every claim through the gate, rejects repaired (2 rounds), auto-queued on ingest, run ledger, record/replay cache, live eval vs ground truth | done |
+| `/claims` page: claims as plain-language sentences with tier-coloured fields, quotes in context, source details, history and extractor; filters, search, grouping, live refresh | done |
 | Test suite: gate, store, tamper evidence, API routes, debug lib (~95% statements) | done |
 | Entity registry | next |
-| LLM extraction with repair loop | next |
 | Policy + access labels, non-interference test | next |
 | Derivation engine, "distrust source" blast radius | next |
 | Triggers → proactive briefs (web, Slack-style mock, morning email) | next |
@@ -73,6 +74,7 @@ src/lib/store/     DB, hash chain, migrations runner, verify
 src/lib/predicates.ts   predicate vocabulary (versioned)
 src/app/           Next.js UI and API routes
 src/app/debug/     god-mode debug GUI (add a page: new entry in src/app/nav.tsx)
+src/app/claims/    human-friendly claims page
 docs/              scenario, source contracts (email, news, document), design docs
 examples/          example emails, news, documents (`npm run inbox:example` copies them into data/inbox, data/news, data/docs)
 src/lib/ingest/    email, news, document parsers, shared front-matter code, kind registry, folder ingest, watcher
@@ -86,4 +88,15 @@ npm run dev        # http://localhost:3000, DB at data/brain.db
 npm test           # vitest
 npm run test:cov   # with coverage
 npm run db:reset   # wipe the local DB
+npm run eval:extract   # live extraction eval against fixtures/extraction-truth.json (calls the model)
 ```
+
+## Extraction settings (environment)
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `BRAIN_EXTRACT` | on | `off` stops automatic extraction (saves subscription quota) |
+| `BRAIN_LLM_MODEL` | `sonnet` | model passed to `claude -p` |
+| `BRAIN_LLM_MODE` | `auto` | `auto` replay-or-call-and-record · `live` always call · `replay` recorded responses only (offline demo) |
+| `BRAIN_LLM_CACHE` | `data/llm-cache` | where responses are recorded |
+| `BRAIN_EXTRACT_CONCURRENCY` | 2 | parallel extractions |

@@ -1,6 +1,6 @@
 import { mkdirSync, watch, type FSWatcher } from "node:fs";
 import type { DB } from "../store";
-import { scanInbox, type SourceKind } from "./inbox";
+import { scanInbox, type FileOutcome, type SourceKind } from "./inbox";
 
 export interface InboxWatcher {
   scanNow(): void;
@@ -12,7 +12,7 @@ export interface InboxWatcher {
  * rescan covers platforms/filesystems where events are dropped. A file that
  * changed in the last `settleMs` is left for the next pass (it may be mid-write).
  */
-export function startInboxWatcher(db: DB, root: string, opts: { settleMs?: number; pollMs?: number; kind?: SourceKind } = {}): InboxWatcher {
+export function startInboxWatcher(db: DB, root: string, opts: { settleMs?: number; pollMs?: number; kind?: SourceKind; onIngested?: (o: FileOutcome) => void } = {}): InboxWatcher {
   const settleMs = opts.settleMs ?? 300;
   const kind = opts.kind ?? "email";
   mkdirSync(root, { recursive: true });
@@ -22,6 +22,7 @@ export function startInboxWatcher(db: DB, root: string, opts: { settleMs?: numbe
     timer = null;
     try {
       const { outcomes, pending } = scanInbox(db, root, { minAgeMs: settleMs, kind });
+      for (const o of outcomes) if (o.result === "ingested") opts.onIngested?.(o);
       for (const o of outcomes) console.log(`[${kind}] ${o.result.padEnd(9)} ${o.path}${o.errors ? ` — ${o.errors.join("; ")}` : ""}`);
       if (pending > 0) schedule(settleMs + 100);
     } catch (e) {

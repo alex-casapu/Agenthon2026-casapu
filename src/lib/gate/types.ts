@@ -8,6 +8,8 @@ export interface FieldDef {
   tier: Tier;
   type: FieldType;
   required: boolean;
+  /** Guidance for the extractor. Optional; new predicate versions only (it is part of the definition hash). */
+  hint?: string;
 }
 
 export interface PredicateDef {

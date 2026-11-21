@@ -7,6 +7,8 @@ origin: WMS Parma
 language: it
 reliability: high
 ---
+Situazione delle scorte al 20/11/2026.
+
 | Articolo | Magazzino | Giacenza (t) | Giorni di copertura |
 |---|---|---|---|
 | Semola di grano duro | Parma | 1.200 | 9 |

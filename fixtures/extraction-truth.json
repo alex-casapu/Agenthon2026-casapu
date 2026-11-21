@@ -1,0 +1,193 @@
+{
+  "note": "What a good extractor should find in examples/**. 'fields' are compared exactly against the claim's slots; 'quoteIncludes' matches any quote of the claim; 'anyOf' accepts alternatives. One claim may satisfy several expectations. 'allow' lists acceptable extras; 'forbid' lists claims that must NOT be extracted from that source.",
+  "sources": {
+    "msg-2026-10-12-rossi-0915": {
+      "expect": [
+        {
+          "predicate": "supplier_price",
+          "fields": {
+            "amount": 412,
+            "currency": "EUR",
+            "per": "t",
+            "min_volume": 800,
+            "valid_to": "2026-12-31"
+          }
+        }
+      ]
+    },
+    "msg-2026-11-03-greco-0840": {
+      "expect": [
+        {
+          "predicate": "supplier_price",
+          "fields": {
+            "amount": 1250,
+            "currency": "EUR",
+            "per": "t",
+            "min_volume": 500,
+            "valid_to": "2027-01-15"
+          }
+        }
+      ]
+    },
+    "msg-2026-11-19-neri-1730": {
+      "expect": [
+        {
+          "predicate": "statement",
+          "quoteIncludes": "raccolto canadese"
+        }
+      ],
+      "forbid": [
+        {
+          "predicate": "spot_price"
+        },
+        {
+          "predicate": "supplier_price"
+        }
+      ]
+    },
+    "msg-2026-10-13-verdi-1005": {
+      "expect": [],
+      "forbid": [
+        {
+          "predicate": "supplier_price"
+        },
+        {
+          "predicate": "spot_price"
+        }
+      ],
+      "allow": [
+        {
+          "predicate": "commitment",
+          "quoteIncludes": "una settimana"
+        },
+        {
+          "predicate": "statement",
+          "quoteIncludes": "una settimana"
+        }
+      ]
+    },
+    "news-2026-10-31-report-ottobre": {
+      "expect": [
+        {
+          "predicate": "spot_price",
+          "fields": {
+            "amount": 425,
+            "currency": "EUR",
+            "per": "t"
+          }
+        }
+      ]
+    },
+    "news-2026-11-21-semola-502": {
+      "expect": [
+        {
+          "predicate": "spot_price",
+          "fields": {
+            "amount": 502,
+            "currency": "EUR",
+            "per": "t",
+            "change_pct": 18
+          }
+        }
+      ]
+    },
+    "news-2026-11-21-rettifica": {
+      "expect": [
+        {
+          "predicate": "spot_price",
+          "fields": {
+            "amount": 478,
+            "currency": "EUR",
+            "per": "t",
+            "change_pct": 12.5
+          }
+        },
+        {
+          "predicate": "statement",
+          "quoteIncludes": "Foggia"
+        }
+      ]
+    },
+    "CQ-2026-031": {
+      "expect": [
+        {
+          "predicate": "supplier_price",
+          "fields": {
+            "amount": 412,
+            "currency": "EUR",
+            "per": "t"
+          }
+        },
+        {
+          "predicate": "supplier_price",
+          "fields": {
+            "coverage_pct": 60
+          }
+        },
+        {
+          "predicate": "supplier_price",
+          "fields": {
+            "valid_to": "2027-03-31"
+          }
+        }
+      ]
+    },
+    "PP-2026-Q4": {
+      "expect": [
+        {
+          "predicate": "demand",
+          "fields": {
+            "amount": 4000,
+            "unit": "t"
+          }
+        }
+      ]
+    },
+    "WMS-PR-20261120": {
+      "expect": [
+        {
+          "predicate": "stock_coverage",
+          "fields": {
+            "days": 9,
+            "as_of": "2026-11-20"
+          }
+        }
+      ],
+      "allow": [
+        {
+          "predicate": "stock_coverage",
+          "fields": {
+            "days": 14
+          }
+        }
+      ]
+    },
+    "INV-8841": {
+      "expect": [
+        {
+          "predicate": "supplier_price",
+          "fields": {
+            "amount": 412,
+            "currency": "EUR",
+            "per": "t",
+            "volume": 800
+          }
+        },
+        {
+          "anyOf": [
+            {
+              "predicate": "commitment",
+              "fields": {
+                "due": "2026-11-29"
+              }
+            },
+            {
+              "predicate": "statement",
+              "quoteIncludes": "29/11/2026"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

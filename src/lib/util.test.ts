@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { canonicalize, cpLength, cpSlice, CANON_VERSION } from "./canon";
 import { canonicalJson, sha256 } from "./hash";
-import { getPredicate, PREDICATES } from "./predicates";
+import { getPredicate, latestPredicates, PREDICATES } from "./predicates";
 
 describe("hash", () => {
   it("matches the SHA-256 test vector", () => {
@@ -40,10 +40,16 @@ describe("predicates", () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
   it("returns the latest version unless one is requested", () => {
-    expect(getPredicate("supplier_price")?.version).toBe(1);
-    expect(getPredicate("supplier_price", 1)?.id).toBe("supplier_price");
+    expect(getPredicate("supplier_price")?.version).toBe(2);
+    expect(getPredicate("supplier_price", 1)?.version).toBe(1);
     expect(getPredicate("supplier_price", 99)).toBeUndefined();
     expect(getPredicate("nope")).toBeUndefined();
+  });
+  it("latestPredicates has one entry per id, at its highest version", () => {
+    const l = latestPredicates();
+    expect(new Set(l.map((p) => p.id)).size).toBe(l.length);
+    expect(l.find((p) => p.id === "supplier_price")?.version).toBe(2);
+    expect(l.map((p) => p.id)).toEqual(expect.arrayContaining(["spot_price", "demand", "stock_coverage", "commitment", "statement"]));
   });
   it("keeps tier and type combinations coherent", () => {
     for (const p of PREDICATES)

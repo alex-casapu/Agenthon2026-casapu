@@ -62,7 +62,7 @@ Il contratto scade il 31/03/2027.
 
 Any other key is an error.
 
-Facts such as prices, quantities, validity periods and due dates belong **in the body**, where they can be cited; the header is descriptive metadata only.
+Facts such as prices, quantities, validity periods and due dates belong **in the body**, where they can be cited; the header is descriptive metadata only. This includes the date a figure refers to: an export whose "as of" date appears only in the title cannot have that date verified, so state it in the text ("Situazione delle scorte al 20/11/2026").
 
 ### Body
 
