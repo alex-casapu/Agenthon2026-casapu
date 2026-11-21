@@ -62,7 +62,7 @@ function ClaimCard({ c, selected, onSelect, onReview }: { c: Claim; selected: bo
             <button className="bad" onClick={(ev) => { ev.stopPropagation(); onReview("rejected"); }}>Reject</button>
           </>
         )}
-        {c.status === "approved" && <button onClick={(ev) => { ev.stopPropagation(); onReview("retracted"); }}>Retract</button>}
+        {c.status === "approved" && <button onClick={(ev) => { ev.stopPropagation(); onReview("rejected"); }}>Reject</button>}
       </div>
     </div>
   );

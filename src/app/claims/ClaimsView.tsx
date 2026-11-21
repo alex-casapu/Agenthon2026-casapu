@@ -50,10 +50,13 @@ function Evidence({ e }: { e: EvidenceView }) {
 }
 
 function Card({ c, curate, onReview }: { c: ClaimView; curate: boolean; onReview: (type: "approved" | "rejected" | "retracted") => void }) {
+  // trusted = approved by the policy on admission, and no person has approved or changed it since
+  const lastApproval = [...c.history].reverse().find((h) => h.type === "approved");
+  const byPolicy = c.status === "approved" && !!lastApproval?.actor.startsWith("policy:");
   return (
     <article className="card cl">
       <header className="clhead">
-        <span className={`chip status-${c.status}`}>{c.status}</span>
+        <span className={`chip status-${c.status}`} title={byPolicy ? "Approved by the trust policy, not by a person. A curator can still reject it." : undefined}>{byPolicy ? "trusted" : c.status}</span>
         <span className="chip">{c.predicate_id}@{c.predicate_version}</span>
         {c.labels.map((l) => <span key={l} className="chip" title="visibility label from the sources">{l}</span>)}
         <span className="muted small" title="roles allowed to see this claim">sees: {c.visible_to.join(", ") || "nobody"}</span>
@@ -89,7 +92,7 @@ function Card({ c, curate, onReview }: { c: ClaimView; curate: boolean; onReview
         </div>
       )}
       {curate && c.status === "approved" && (
-        <div className="row" style={{ marginTop: 8 }}><button onClick={() => onReview("retracted")}>Retract</button></div>
+        <div className="row" style={{ marginTop: 8 }}><button className="bad" onClick={() => onReview("rejected")}>Reject</button></div>
       )}
       <details>
         <summary>raw</summary>
@@ -174,10 +177,10 @@ export default function ClaimsView() {
         {principal ? (
           <span className="small">
             <strong>{principal.name}</strong> · {principal.role} · clearances: <code className="mono">{principal.clearances.join(", ")}</code> · <strong>{claims.length} of {total}</strong> claims visible
-            {principal.curator ? " · can approve and reject" : " · read-only"}
+            {principal.curator ? " · can reject, and approve what is waiting" : " · read-only"}
           </span>
         ) : (
-          <span className="small muted">God mode: every claim, no filtering. Pick a curator (Marta) to approve or reject.</span>
+          <span className="small muted">God mode: every claim, no filtering. Pick a curator to review claims.</span>
         )}
       </div>
       {msg && <p className="note">{msg}</p>}

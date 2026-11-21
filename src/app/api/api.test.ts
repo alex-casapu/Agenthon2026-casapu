@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // connection() only works inside a Next request; routes are called directly here.
 vi.mock("next/server", () => ({ connection: async () => {} }));
 
-import { getDb, insertSource, submitClaim } from "@/lib/store";
+import { DEMO_ENTITIES } from "@/lib/demo-entities";
+import { getDb, insertSource, seedEntities, submitClaim } from "@/lib/store";
 import { GET as getState } from "./state/route";
 import { POST as postSource } from "./sources/route";
 import { POST as postClaim } from "./claims/route";
@@ -17,6 +18,8 @@ import { GET as getClaimViews } from "./debug/claims/route";
 import { POST as postScan } from "./ingest/scan/route";
 import { POST as postExtract } from "./extract/route";
 import { GET as getIngestStatus } from "./ingest/status/route";
+import { GET as getPrincipalsRoute } from "./principals/route";
+import { writePrincipals } from "@/lib/policy-config";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -41,6 +44,7 @@ const claim = (source_id: string, amount = 412) => ({
 beforeEach(() => {
   process.env.BRAIN_DB = ":memory:";
   delete (globalThis as unknown as { __brainDb?: unknown }).__brainDb;
+  seedEntities(getDb(), DEMO_ENTITIES);
 });
 
 describe("API", () => {
@@ -83,7 +87,7 @@ describe("API", () => {
 
     expect((await postReview(json("", { type: "retracted" }, marta), ctx)).status).toBe(409);
     expect((await postReview(json("", { type: "approved" }, marta), ctx)).status).toBe(200);
-    expect((await postReview(json("", { type: "rejected" }, marta), ctx)).status).toBe(409);
+    expect((await postReview(json("", { type: "approved" }, marta), ctx)).status).toBe(409); // already approved
     expect((await postReview(json("", { type: "bogus" }, marta), ctx)).status).toBe(400);
     expect((await postReview(json("", { type: "approved" }, marta), { params: Promise.resolve({ id: "nope" }) })).status).toBe(409);
 
@@ -237,6 +241,82 @@ describe("API", () => {
       } finally {
         delete process.env.BRAIN_EXTRACT;
       }
+    });
+  });
+
+  describe("principals follow the world's configuration", () => {
+    const saved = process.env.BRAIN_PRINCIPALS;
+    afterEach(() => {
+      process.env.BRAIN_PRINCIPALS = saved;
+    });
+    const world = (file: string) => {
+      process.env.BRAIN_PRINCIPALS = file;
+      writePrincipals([
+        { id: "giulia", name: "Giulia Ferri", role: "Responsabile acquisti", clearances: ["*"], curator: true, suggestions: ["Quanto costa la semola?"] },
+        { id: "marco", name: "Marco Bellini", role: "Controller", clearances: ["public", "finance"], curator: false },
+        { id: "sara", name: "Sara Conti", role: "Commerciale", clearances: ["public"], curator: false },
+      ]);
+    };
+
+    it("lists the default cast when no world is loaded, and records it", async () => {
+      process.env.BRAIN_PRINCIPALS = join(mkdtempSync(join(tmpdir(), "p-")), "none.json");
+      const body = await (await getPrincipalsRoute()).json();
+      expect(body.principals.map((p: { id: string }) => p.id)).toEqual(["marta", "luca", "sara"]);
+      expect((getDb().prepare("SELECT COUNT(*) AS n FROM principals").get() as { n: number }).n).toBeGreaterThanOrEqual(3);
+    });
+
+    it("lists a world's people (at most three) and logs the change as new versions", async () => {
+      world(join(mkdtempSync(join(tmpdir(), "p-")), "principals.json"));
+      const body = await (await getPrincipalsRoute()).json();
+      expect(body.principals.map((p: { id: string }) => p.id)).toEqual(["giulia", "marco", "sara"]);
+      expect(body.principals[0]).toMatchObject({ curator: true, clearances: ["*"] });
+      expect(getDb().prepare("SELECT principal_id FROM principals WHERE principal_id = 'giulia'").all()).toHaveLength(1);
+      await getPrincipalsRoute();
+      expect(getDb().prepare("SELECT principal_id FROM principals WHERE principal_id = 'giulia'").all()).toHaveLength(1); // unchanged: not re-recorded
+    });
+
+    it("curation and visibility follow the world's people; a cookie naming someone else's cast curates nothing", async () => {
+      world(join(mkdtempSync(join(tmpdir(), "p-")), "principals.json"));
+      await postSeed();
+      const { claim_id } = (await (await getState()).json()).claims[0];
+      const ctx = { params: Promise.resolve({ id: claim_id }) };
+      expect((await postReview(json("", { type: "approved" }, as("marta")), ctx)).status).toBe(403); // marta is not in this world
+      expect((await postReview(json("", { type: "approved" }, as("marco")), ctx)).status).toBe(403); // not a curator here
+      expect((await postReview(json("", { type: "approved" }, as("giulia")), ctx)).status).toBe(200);
+      expect(lastActor()).toBe("human:giulia");
+
+      const view = (who: string) => getClaimViews(new Request("http://test/api/debug/claims", { headers: { cookie: as(who) } })).then((r) => r.json());
+      expect((await view("sara")).principal).toMatchObject({ id: "sara", role: "Commerciale" });
+      expect((await view("giulia")).claims[0].visible_to).toEqual(["giulia", "marco", "sara"]);
+    });
+  });
+
+  describe("trust by default", () => {
+    const saved = process.env.BRAIN_TRUST;
+    afterEach(() => {
+      process.env.BRAIN_TRUST = saved;
+    });
+
+    it("a manually proposed claim is usable at once, and a curator can still reject it", async () => {
+      delete process.env.BRAIN_TRUST; // the real default
+      const { source_id } = await (await postSource(json("/api/sources", source))).json();
+      const res = await postClaim(json("/api/claims", claim(source_id)));
+      expect(await res.json()).toMatchObject({ ok: true, trusted: true });
+      const [c] = (await (await getState()).json()).claims;
+      expect(c.status).toBe("approved");
+      expect(getDb().prepare("SELECT actor FROM claim_events ORDER BY seq").all()).toEqual([{ actor: "human:manual" }, { actor: "policy:trust-by-default" }]);
+
+      const ctx = { params: Promise.resolve({ id: c.claim_id }) };
+      expect((await postReview(json("", { type: "rejected", reason: "wrong lot" }, as("marta")), ctx)).status).toBe(200);
+      expect((await (await getState()).json()).claims[0].status).toBe("rejected");
+      expect(lastActor()).toBe("human:marta");
+    });
+
+    it("BRAIN_TRUST=off puts claims back in the queue for a curator", async () => {
+      process.env.BRAIN_TRUST = "off";
+      const { source_id } = await (await postSource(json("/api/sources", source))).json();
+      expect(await (await postClaim(json("/api/claims", claim(source_id)))).json()).toMatchObject({ ok: true, duplicate: false });
+      expect((await (await getState()).json()).claims[0].status).toBe("proposed");
     });
   });
 });

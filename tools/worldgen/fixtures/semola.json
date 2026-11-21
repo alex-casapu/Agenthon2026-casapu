@@ -20,9 +20,9 @@
     "produzione": { "sees": [] }
   },
   "people": [
-    { "key": "marta", "name": "Marta Ricci", "email": "marta.ricci@pastaco.example", "role": "Acquisti", "persona": "Professionale e cordiale, frasi brevi e chiare, firma sempre con ruolo e azienda." },
-    { "key": "luca", "name": "Luca Bianchi", "email": "luca.bianchi@pastaco.example", "role": "Finance", "persona": "Preciso e attento ai numeri, tono sobrio." },
-    { "key": "sara", "name": "Sara Conti", "email": "sara.conti@pastaco.example", "role": "Produzione", "persona": "Pratica e tecnica, va dritta al punto." },
+    { "key": "marta", "name": "Marta Ricci", "email": "marta.ricci@pastaco.example", "role": "Acquisti", "access": "acquisti", "persona": "Professionale e cordiale, frasi brevi e chiare, firma sempre con ruolo e azienda." },
+    { "key": "luca", "name": "Luca Bianchi", "email": "luca.bianchi@pastaco.example", "role": "Finance", "access": "finance", "persona": "Preciso e attento ai numeri, tono sobrio." },
+    { "key": "sara", "name": "Sara Conti", "email": "sara.conti@pastaco.example", "role": "Produzione", "access": "produzione", "persona": "Pratica e tecnica, va dritta al punto." },
     { "key": "roberto", "name": "Roberto Fabbri", "email": "roberto.fabbri@pastaco.example", "role": "Commerciale", "persona": "Informale e colloquiale, dà del tu, scrive in fretta." },
     { "key": "giulia", "name": "Giulia Neri", "email": "giulia.neri@mulinoaltamurgia.example", "role": "Commerciale, Mulino Alta Murgia", "persona": "Cortese e formale, tono commerciale." }
   ],

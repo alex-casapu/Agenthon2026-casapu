@@ -45,6 +45,11 @@ export function lintSpec(spec: ScenarioSpec, profile: Profile = "demo7"): string
   const tierIds = new Set(spec.tiers.map((t) => t.id));
   if (tierIds.size !== spec.tiers.length) err("tiers: duplicate id");
 
+  // ── roles and who acts as them (at most three principals) ──
+  if (Object.keys(spec.roles).length > 3) err(`roles: at most three roles are supported (three principals), found ${Object.keys(spec.roles).length}`);
+  for (const p of spec.people) if (p.access !== undefined && !spec.roles[p.access]) err(`people: "${p.key}" has access "${p.access}", which is not a role`);
+  for (const k of dup(spec.people.filter((p) => p.access !== undefined), (p) => p.access!)) err(`people: more than one person has access "${k}"`);
+
   // ── references ──
   const peopleKeys = new Set(spec.people.map((p) => p.key));
   const used = new Set<string>();
@@ -144,7 +149,8 @@ export function lintSpec(spec: ScenarioSpec, profile: Profile = "demo7"): string
     for (const kind of ["answer", "unknown", "denied"] as const) {
       if (!spec.questions.some((q) => q.expect === kind)) err(`coverage: the questions need at least one "${kind}"`);
     }
-    if (Object.keys(spec.roles).length < 3) err("coverage: at least three roles are needed");
+    if (Object.keys(spec.roles).length !== 3) err("coverage: exactly three roles are needed (the system has three principals)");
+    for (const r of Object.keys(spec.roles)) if (!spec.people.some((p) => p.access === r)) err(`coverage: role "${r}" needs one internal person with access: "${r}"`);
     if (!Object.values(spec.roles).some((r) => r.curator)) err("coverage: one role must be the curator (curator: true)");
     if (spec.derived.length === 0) err("coverage: at least one derived value is needed (something the system must compute)");
     if (world.pieces.length < 6 || world.pieces.length > 20) err(`coverage: between 6 and 20 pieces are expected, found ${world.pieces.length}`);

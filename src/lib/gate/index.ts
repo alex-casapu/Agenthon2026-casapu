@@ -1,4 +1,4 @@
-import { getEntity, suggestEntities } from "../entities";
+import type { EntityRegistry } from "../entities";
 import { sha256, canonicalJson } from "../hash";
 import { getPredicate } from "../predicates";
 import { dateCandidates } from "./dates";
@@ -44,10 +44,10 @@ function typeError(f: FieldDef, v: unknown): string | null {
  * resolved: a deterministic resolver re-derives it from quote + source metadata.
  * interpretive: shape only; a human curator reviews the interpretation.
  */
-function groundField(f: FieldDef, v: unknown, quotes: Located[], strictEntities: boolean): { grounding: FieldGrounding } | { error: GateError } {
+function groundField(f: FieldDef, v: unknown, quotes: Located[], registry: EntityRegistry | undefined): { grounding: FieldGrounding } | { error: GateError } {
   if (f.tier === "interpretive") {
-    if (strictEntities && f.type === "entity" && !getEntity(v as string)) {
-      const near = suggestEntities(v as string).map((x) => x.id);
+    if (registry && f.type === "entity" && !registry.get(v as string)) {
+      const near = registry.suggest(v as string).map((x) => x.id);
       return {
         error: {
           code: "unknown_entity",
@@ -104,11 +104,10 @@ function groundField(f: FieldDef, v: unknown, quotes: Located[], strictEntities:
 /** The gate: pure, no LLM, no DB. Everything a claim asserts is checked against its quotes. */
 export interface GateOptions {
   /**
-   * Require entity fields to be ids in the registry. A rule for what may be
-   * admitted, not evidence grounding, so a later audit (verify) does not apply it
-   * to claims admitted before the registry existed.
+   * Require entity fields to be ids in this registry. A rule for what may be
+   * admitted, not evidence grounding, so a later audit (verify) does not apply it.
    */
-  entities?: boolean;
+  entities?: EntityRegistry;
 }
 
 export function checkClaim(input: GateInput, getSource: (id: string) => SourceView | undefined, opts: GateOptions = {}): GateResult {
@@ -164,7 +163,7 @@ export function checkClaim(input: GateInput, getSource: (id: string) => SourceVi
       errors.push({ code: "bad_type", field: f.name, message: `${f.name} ${te}` });
       continue;
     }
-    const g = groundField(f, v, quotes, !!opts.entities);
+    const g = groundField(f, v, quotes, opts.entities);
     if ("error" in g) {
       errors.push(g.error);
       continue;

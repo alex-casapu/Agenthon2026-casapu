@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { describe, it } from "vitest";
 import { defaultLlm, llmMode, llmModel } from "../llm";
 import { scanInbox, type SourceKind } from "../ingest/inbox";
-import { listClaims, openDb } from "../store";
+import { listClaims, listEntities, openDb } from "../store";
 import { extractSource } from "./extract";
 import { flattenClaim, scoreSource, type SourceTruth } from "./eval";
 
@@ -26,7 +26,7 @@ describe("extraction eval", () => {
     const summaries = new Map<string, Awaited<ReturnType<typeof extractSource>>>();
     const queue = [...sources];
     await Promise.all(
-      Array.from({ length: 3 }, async () => {
+      Array.from({ length: 1 }, async () => { // sequential: the entity registry grows source by source, so order matters
         for (let s = queue.shift(); s; s = queue.shift()) summaries.set(s.external_id, await extractSource(db, s.source_id, { llm, model }));
       }),
     );
@@ -35,11 +35,12 @@ describe("extraction eval", () => {
     const detail: Record<string, unknown> = {};
     let expected = 0, found = 0, extras = 0, forbidden = 0, rejected = 0, calls = 0, cost = 0, failed = 0;
     const all = listClaims(db);
+    const entities = listEntities(db);
     for (const src of sources) {
       const t = truth[src.external_id];
       const sum = summaries.get(src.external_id)!;
       const claims = all.filter((c) => c.evidence.some((e) => e.source_id === src.source_id));
-      const sc = t ? scoreSource(claims, t) : { expected: 0, found: 0, missing: [], extras: claims, forbiddenHits: [] };
+      const sc = t ? scoreSource(claims, t, entities) : { expected: 0, found: 0, missing: [], extras: claims, forbiddenHits: [] };
       expected += sc.expected; found += sc.found; extras += sc.extras.length; forbidden += sc.forbiddenHits.length;
       rejected += sum.rejected; calls += sum.rounds; cost += sum.cost_usd ?? 0; failed += sum.status === "failed" ? 1 : 0;
       rows.push({ source: src.external_id, status: sum.status, calls: sum.rounds, claims: claims.length, recall: `${sc.found}/${sc.expected}`, extras: sc.extras.length, forbidden: sc.forbiddenHits.length, gateRejected: sum.rejected, sec: ((sum.duration_ms ?? 0) / 1000).toFixed(1) });
@@ -53,6 +54,9 @@ describe("extraction eval", () => {
 
     console.log(`\nExtraction eval · model ${model} · mode ${llmMode()}`);
     console.table(rows);
+    const found_ents = entities.filter((e) => e.origin);
+    console.log(`entities discovered: ${found_ents.length}`);
+    console.table(found_ents.map((e) => ({ id: e.id, name: e.name, kind: e.kind, aliases: e.aliases.join(", ") })));
     console.log(`recall ${found}/${expected} (${((100 * found) / Math.max(1, expected)).toFixed(0)}%) · extra claims ${extras} · forbidden hits ${forbidden} · gate-rejected ${rejected} · failed runs ${failed} · model calls ${calls} · cost $${cost.toFixed(3)}`);
     for (const [id, d] of Object.entries(detail) as [string, { missing: unknown[]; extras: unknown[]; forbiddenHits: unknown[] }][]) {
       if (d.missing.length) console.log(`\nMISSING in ${id}:`, JSON.stringify(d.missing));
@@ -60,6 +64,6 @@ describe("extraction eval", () => {
       if (d.extras.length) console.log(`\nEXTRA in ${id}:`, JSON.stringify(d.extras, null, 1));
     }
     mkdirSync(join(process.cwd(), "data", "eval"), { recursive: true });
-    writeFileSync(join(process.cwd(), "data", "eval", `extraction-${new Date().toISOString().replace(/[:.]/g, "-")}.json`), JSON.stringify({ model, found, expected, extras, forbidden, rejected, failed, cost, rows, detail }, null, 2));
+    writeFileSync(join(process.cwd(), "data", "eval", `extraction-${new Date().toISOString().replace(/[:.]/g, "-")}.json`), JSON.stringify({ model, found, expected, extras, forbidden, rejected, failed, cost, rows, detail, entities: found_ents.map((e) => ({ id: e.id, name: e.name, kind: e.kind, aliases: e.aliases })) }, null, 2));
   }, 900_000);
 });

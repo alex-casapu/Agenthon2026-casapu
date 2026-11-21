@@ -1,5 +1,7 @@
 import { cpLength, cpSlice } from "./canon";
-import { PRINCIPALS, canSee, type Principal } from "./policy";
+import { canSee, type Principal } from "./policy";
+import { getPrincipals } from "./policy-config";
+import { listEntities } from "./store/entities";
 import { PREDICATES } from "./predicates";
 import type { DB } from "./store/log";
 
@@ -68,7 +70,7 @@ const num = (v: unknown) => (typeof v === "number" ? v.toLocaleString("en-US", {
 const price = (f: Record<string, unknown>) => `${num(f.amount)} ${f.currency ?? ""}/${f.per ?? ""}`.replace(/\s+\//, "/");
 
 /** One plain-language line for a claim, from its field values. Generic fallback for unknown predicates. */
-export function sentenceFor(predicate: string, f: Record<string, unknown>): string {
+export function sentenceFor(predicate: string, f: Record<string, unknown>, nameOf: (v: unknown) => string = prettyEntity): string {
   const has = (k: string) => f[k] !== undefined && f[k] !== null;
   switch (predicate) {
     case "supplier_price": {
@@ -79,18 +81,18 @@ export function sentenceFor(predicate: string, f: Record<string, unknown>): stri
         has("coverage_pct") ? `covers ${num(f.coverage_pct)}% of needs` : null,
         has("valid_to") ? `valid until ${f.valid_to}` : null,
       ].filter(Boolean);
-      return `${prettyEntity(f.supplier)} prices ${prettyEntity(f.item)} at ${price(f)}${extra.length ? ` (${extra.join(", ")})` : ""}`;
+      return `${nameOf(f.supplier)} prices ${nameOf(f.item)} at ${price(f)}${extra.length ? ` (${extra.join(", ")})` : ""}`;
     }
     case "spot_price":
-      return `Market price of ${prettyEntity(f.item)}${has("market") ? ` (${f.market})` : ""} is ${price(f)}${
+      return `Market price of ${nameOf(f.item)}${has("market") ? ` (${f.market})` : ""} is ${price(f)}${
         has("change_pct") ? `, ${Number(f.change_pct) > 0 ? "+" : ""}${num(f.change_pct)}%` : ""
       }${has("period") ? ` — ${f.period}` : ""}`;
     case "demand":
-      return `${has("site") ? prettyEntity(f.site) : "Requirement"} needs ${num(f.amount)} ${f.unit} of ${prettyEntity(f.item)} per ${f.period}`;
+      return `${has("site") ? nameOf(f.site) : "Requirement"} needs ${num(f.amount)} ${f.unit} of ${nameOf(f.item)} per ${f.period}`;
     case "stock_coverage":
-      return `${prettyEntity(f.site)} holds ${num(f.days)} days of ${prettyEntity(f.item)}${has("as_of") ? ` as of ${f.as_of}` : ""}`;
+      return `${nameOf(f.site)} holds ${num(f.days)} days of ${nameOf(f.item)}${has("as_of") ? ` as of ${f.as_of}` : ""}`;
     case "commitment":
-      return `${prettyEntity(f.owner)} commits to ${f.action}${has("counterparty") ? ` for ${prettyEntity(f.counterparty)}` : ""}${has("due") ? `, by ${f.due}` : ""}`;
+      return `${nameOf(f.owner)} commits to ${f.action}${has("counterparty") ? ` for ${nameOf(f.counterparty)}` : ""}${has("due") ? `, by ${f.due}` : ""}`;
     case "statement":
       return String(f.text ?? "");
     default:
@@ -101,7 +103,11 @@ export function sentenceFor(predicate: string, f: Record<string, unknown>): stri
 type Row = Record<string, string | number | null>;
 const CONTEXT = 140;
 
-export function listClaimViews(db: DB): ClaimView[] {
+export function listClaimViews(db: DB, principals: Principal[] = getPrincipals()): ClaimView[] {
+  // entities are named by what the sources call them, not by a prettified id
+  const names = new Map(listEntities(db).map((e) => [e.id, e.name]));
+  const nameOf = (v: unknown) => names.get(String(v)) ?? prettyEntity(v);
+
   const claims = db
     .prepare("SELECT c.*, s.status FROM claims c JOIN claim_status s USING (claim_id) ORDER BY c.rowid DESC")
     .all() as Row[];
@@ -184,9 +190,9 @@ export function listClaimViews(db: DB): ClaimView[] {
       predicate_id: c.predicate_id as string,
       predicate_version: c.predicate_version as number,
       status: c.status as string,
-      sentence: sentenceFor(c.predicate_id as string, flat),
+      sentence: sentenceFor(c.predicate_id as string, flat, nameOf),
       labels,
-      visible_to: PRINCIPALS.filter((p) => canSee(p, labels)).map((p) => p.id),
+      visible_to: principals.filter((p) => canSee(p, labels)).map((p) => p.id),
       fields,
       valid_from: c.valid_from as string | null,
       valid_to: c.valid_to as string | null,

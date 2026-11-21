@@ -1,0 +1,43 @@
+[
+  {
+    "id": "elena",
+    "name": "Elena Marsh",
+    "role": "Procurement",
+    "clearances": [
+      "*"
+    ],
+    "curator": true,
+    "suggestions": [
+      "When is the Kestrel shipment now expected to arrive?",
+      "How many units would Line 2 fail to produce because of the announced delay if we do nothing?",
+      "What is the current estimated arrival date of the shipment?",
+      "Will the container be stuck at Genoa for up to three weeks?"
+    ]
+  },
+  {
+    "id": "david",
+    "name": "David Okafor",
+    "role": "Finance",
+    "clearances": [
+      "public",
+      "finance"
+    ],
+    "curator": false,
+    "suggestions": [
+      "What would the air-freight lot cost and how much budget would remain?"
+    ]
+  },
+  {
+    "id": "priya",
+    "name": "Priya Raman",
+    "role": "Production",
+    "clearances": [
+      "public"
+    ],
+    "curator": false,
+    "suggestions": [
+      "How many days of PM-88 stock do we have on Line 2?",
+      "What unit price do we pay Kestrel under the supply agreement?"
+    ]
+  }
+]

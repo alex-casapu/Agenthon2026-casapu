@@ -1,8 +1,9 @@
+import { memDb } from "../testkit";
 import { mkdtempSync, writeFileSync, cpSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { insertSource, openDb, reviewClaim, submitClaim, verify, listClaims, type DB } from ".";
+import { insertSource, openDb, reviewClaim, submitClaim, TRUST_ACTOR, verify, listClaims, type DB } from ".";
 import { migrate } from "./migrate";
 
 const TEXT = "Hi, the October lot of durum semolina is €412 per tonne, valid until 31 December. Regards";
@@ -16,7 +17,7 @@ const priceInput = (sid: string) => ({
 });
 
 beforeEach(() => {
-  db = openDb(":memory:");
+  db = memDb();
   sourceId = insertSource(db, {
     kind: "email",
     external_id: "msg-1",
@@ -55,9 +56,53 @@ describe("store", () => {
     if (!r.ok) throw new Error();
     expect(reviewClaim(db, r.claim_id, "retracted", "u")).toMatchObject({ ok: false });
     expect(reviewClaim(db, r.claim_id, "approved", "u")).toMatchObject({ ok: true });
-    expect(reviewClaim(db, r.claim_id, "rejected", "u")).toMatchObject({ ok: false });
+    expect(reviewClaim(db, r.claim_id, "approved", "u")).toMatchObject({ ok: false }); // already approved
     expect(listClaims(db)[0].status).toBe("approved");
+    expect(reviewClaim(db, r.claim_id, "rejected", "u", "wrong")).toMatchObject({ ok: true }); // a curator can reject a trusted claim
+    expect(listClaims(db)[0].status).toBe("rejected");
+    expect(reviewClaim(db, r.claim_id, "approved", "u")).toMatchObject({ ok: false }); // rejection is final
     expect(verify(db).ok).toBe(true);
+  });
+
+  describe("trust by default", () => {
+    const history = () => db.prepare("SELECT type, actor, reason FROM claim_events ORDER BY seq").all();
+
+    it("approves on admission by the policy, in the same transaction, and says so", () => {
+      const r = submitClaim(db, priceInput(sourceId), "agent:extractor", { trust: true });
+      expect(r).toMatchObject({ ok: true, duplicate: false, trusted: true });
+      expect(listClaims(db)[0].status).toBe("approved");
+      expect(history()).toEqual([
+        { type: "proposed", actor: "agent:extractor", reason: null },
+        { type: "approved", actor: TRUST_ACTOR, reason: "trusted by default: usable without curator review" },
+      ]);
+      expect(verify(db)).toMatchObject({ ok: true, problems: [] });
+    });
+
+    it("without it, a claim waits for a person", () => {
+      expect(submitClaim(db, priceInput(sourceId), "agent:extractor", { trust: false })).toMatchObject({ ok: true, duplicate: false });
+      expect(submitClaim(db, { ...priceInput(sourceId), fields: { ...priceInput(sourceId).fields, amount: 412 } }, "agent:extractor")).toMatchObject({ duplicate: true });
+      expect(listClaims(db)[0].status).toBe("proposed");
+      expect(history()).toHaveLength(1);
+    });
+
+    it("a claim a curator rejected stays rejected when the same fact is read again", () => {
+      const r = submitClaim(db, priceInput(sourceId), "agent:extractor", { trust: true });
+      if (!r.ok) throw new Error();
+      reviewClaim(db, r.claim_id, "rejected", "human:marta", "not what the email says");
+      const again = submitClaim(db, priceInput(sourceId), "agent:extractor", { trust: true });
+      expect(again).toMatchObject({ ok: true, duplicate: true });
+      expect("trusted" in again).toBe(false);
+      expect(listClaims(db)[0].status).toBe("rejected");
+      expect(history().map((h) => (h as { type: string }).type)).toEqual(["proposed", "approved", "rejected"]); // no second approval
+    });
+
+    it("a gate rejection is not trusted into existence", () => {
+      const bad = priceInput(sourceId);
+      bad.fields.amount = 999;
+      expect(submitClaim(db, bad, "agent:extractor", { trust: true })).toMatchObject({ ok: false });
+      expect(listClaims(db)).toHaveLength(0);
+      expect(history()).toEqual([]);
+    });
   });
 
   it("blocks UPDATE and DELETE on every table", () => {
@@ -104,7 +149,7 @@ describe("tamper evidence", () => {
     db.exec("UPDATE sources SET canonical_text = replace(canonical_text, '412', '312')");
     expect(verify(db).ok).toBe(false);
 
-    const db2 = openDb(":memory:");
+    const db2 = memDb();
     const sid = insertSource(db2, { kind: "email", external_id: "a", occurred_at: "2026-10-12T09:00:00Z", raw: "hello there" }).source_id;
     expect(sid).toBeTruthy();
     db2.exec("DROP TRIGGER log_no_update");

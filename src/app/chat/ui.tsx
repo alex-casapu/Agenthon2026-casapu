@@ -1,17 +1,22 @@
 import type { ReactNode } from "react";
 
-/** Each person gets a colour so who is asking is obvious at a glance. */
-export const PERSONA: Record<string, { from: string; to: string; initials: string }> = {
-  marta: { from: "#6366f1", to: "#a855f7", initials: "MR" },
-  luca: { from: "#10b981", to: "#14b8a6", initials: "LB" },
-  sara: { from: "#f59e0b", to: "#f97316", initials: "SC" },
-};
+/** Each person gets a colour (from their id) and initials (from their name), whoever the world's cast is. */
+const PALETTE: [string, string][] = [
+  ["#6366f1", "#a855f7"],
+  ["#10b981", "#14b8a6"],
+  ["#f59e0b", "#f97316"],
+  ["#ec4899", "#f43f5e"],
+  ["#0ea5e9", "#6366f1"],
+  ["#84cc16", "#10b981"],
+];
+const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
+export const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("") || "?";
 
-export function Avatar({ id, size = 40 }: { id: string; size?: number }) {
-  const p = PERSONA[id] ?? { from: "#94a3b8", to: "#64748b", initials: "?" };
+export function Avatar({ id, name, size = 40 }: { id: string; name: string; size?: number }) {
+  const [from, to] = PALETTE[hash(id) % PALETTE.length];
   return (
-    <span className="avatar" style={{ width: size, height: size, fontSize: size * 0.36, background: `linear-gradient(135deg, ${p.from}, ${p.to})` }} aria-hidden>
-      {p.initials}
+    <span className="avatar" style={{ width: size, height: size, fontSize: size * 0.36, background: `linear-gradient(135deg, ${from}, ${to})` }} aria-hidden>
+      {initialsOf(name)}
     </span>
   );
 }

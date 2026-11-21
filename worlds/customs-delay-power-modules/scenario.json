@@ -45,21 +45,24 @@
       "name": "Elena Marsh",
       "email": "elena.marsh@norvane.example",
       "role": "Procurement",
-      "persona": "Professional and concise, short clear sentences, signs with role and company."
+      "persona": "Professional and concise, short clear sentences, signs with role and company.",
+      "access": "procurement"
     },
     {
       "key": "david",
       "name": "David Okafor",
       "email": "david.okafor@norvane.example",
       "role": "Finance",
-      "persona": "Precise and sober, focuses on budgets and approvals."
+      "persona": "Precise and sober, focuses on budgets and approvals.",
+      "access": "finance"
     },
     {
       "key": "priya",
       "name": "Priya Raman",
       "email": "priya.raman@norvane.example",
       "role": "Production",
-      "persona": "Practical and technical, goes straight to the point."
+      "persona": "Practical and technical, goes straight to the point.",
+      "access": "production"
     },
     {
       "key": "tom",

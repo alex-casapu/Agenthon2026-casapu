@@ -1,8 +1,9 @@
+import { memDb } from "../testkit";
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { listClaims, listSources, openDb, submitClaim, verify, type DB } from "../store";
+import { listClaims, listSources, submitClaim, verify, type DB } from "../store";
 import { parseEmail } from "./email";
 import { ingestFile, listInboxFiles, scanInbox } from "./inbox";
 import { startInboxWatcher } from "./watcher";
@@ -102,7 +103,7 @@ describe("ingest", () => {
     return p;
   };
   beforeEach(() => {
-    db = openDb(":memory:");
+    db = memDb();
     root = mkdtempSync(join(tmpdir(), "inbox-"));
   });
 
@@ -236,7 +237,7 @@ describe("ingest", () => {
 
 describe("watcher", () => {
   it("ingests a file dropped into a running inbox", async () => {
-    const db = openDb(":memory:");
+    const db = memDb();
     const root = mkdtempSync(join(tmpdir(), "inbox-w-"));
     const w = startInboxWatcher(db, root, { settleMs: 40, pollMs: 100 });
     try {

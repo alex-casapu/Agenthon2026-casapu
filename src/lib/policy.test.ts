@@ -1,7 +1,9 @@
+import { memDb } from "./testkit";
 import { describe, expect, it } from "vitest";
 import { listClaimViews, visibleTo, claimLabels } from "./claims-view";
-import { PRINCIPALS, canSee, getPrincipal, principalFromCookieHeader } from "./policy";
-import { insertSource, openDb, submitClaim, type DB } from "./store";
+import { DEFAULT_PRINCIPALS, canSee } from "./policy";
+import { getPrincipal, getPrincipals, principalFromCookieHeader } from "./policy-config";
+import { insertSource, submitClaim, type DB } from "./store";
 
 const marta = getPrincipal("marta")!;
 const luca = getPrincipal("luca")!;
@@ -26,8 +28,10 @@ describe("canSee", () => {
 
 describe("principals", () => {
   it("are unique, and only Purchasing curates", () => {
-    expect(new Set(PRINCIPALS.map((p) => p.id)).size).toBe(PRINCIPALS.length);
-    expect(PRINCIPALS.filter((p) => p.curator).map((p) => p.id)).toEqual(["marta"]);
+    expect(getPrincipals()).toBe(DEFAULT_PRINCIPALS); // no configuration: the default cast
+    expect(new Set(DEFAULT_PRINCIPALS.map((p) => p.id)).size).toBe(DEFAULT_PRINCIPALS.length);
+    expect(DEFAULT_PRINCIPALS.length).toBeLessThanOrEqual(3);
+    expect(DEFAULT_PRINCIPALS.filter((p) => p.curator).map((p) => p.id)).toEqual(["marta"]);
     expect(getPrincipal("nobody")).toBeNull();
     expect(getPrincipal(null)).toBeNull();
   });
@@ -49,7 +53,7 @@ const PUBLIC = "Il prezzo spot della semola è di 425 €/t, media nazionale.";
 const FINANCE = "Il contratto quadro fissa il prezzo a 412 €/t per il 60% del fabbisogno.";
 
 function build(extra: boolean): DB {
-  const db = openDb(":memory:");
+  const db = memDb();
   const pub = insertSource(db, { kind: "news", external_id: "pub", occurred_at: "2026-10-31T00:00:00Z", raw: PUBLIC, acl_labels: ["public"] }).source_id;
   submitClaim(db, {
     predicate_id: "spot_price",

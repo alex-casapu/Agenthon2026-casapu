@@ -211,7 +211,7 @@ describe("lint", () => {
   it("checks that the scenario gives the demo what it needs", () => {
     expect(mutate("semola", (s) => s.pieces.forEach((p) => p.header.reliability === "low" && (p.header.reliability = "high")))).toMatch(/reliability low/);
     expect(mutate("semola", (s) => s.pieces.forEach((p) => { if (p.kind === "news") delete p.header.corrects; }))).toMatch(/at least one correction/);
-    expect(mutate("semola", (s) => (s.roles = { acquisti: { sees: ["finance"], curator: true } }))).toMatch(/at least three roles/);
+    expect(mutate("semola", (s) => (s.roles = { acquisti: { sees: ["finance"], curator: true } }))).toMatch(/exactly three roles/);
     expect(mutate("semola", (s) => (s.derived = []))).toMatch(/at least one derived value/);
     expect(mutate("semola", (s) => s.questions.forEach((q) => q.expect === "denied" && (q.expect = "unknown")))).toMatch(/at least one "denied"/);
   });

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "no
 import { basename, dirname, join, resolve } from "node:path";
 import { LlmWriter } from "./ai-writer";
 import { compile, type Compiled } from "./compile";
-import { checkDir, defaultTargets, playTier, readSpec, SPEC_FILE, writeWorld } from "./files";
+import { checkDir, checkPrincipals, defaultTargets, loadPrincipals, playTier, readSpec, SPEC_FILE, writeWorld, writeWorldPrincipals } from "./files";
 import { generateWorld, GenerationError } from "./generate";
 import { lintSpec } from "./lint";
 import { ClaudeCliLlm, RecordingLlm, RecordingStore, type RecordMode } from "./llm";
@@ -30,7 +30,8 @@ const USAGE = `Uso: tsx tools/worldgen/cli.ts <comando> [opzioni]
           --prune              elimina le registrazioni non più usate
   lint <scenario.json>        controlla uno scenario, senza modello
   check <worlds/slug>         verifica che i file su disco rispettino contratti e scenario
-  play <worlds/slug> <tappa>  rilascia una tappa nelle cartelle del sistema
+  principals <worlds/slug>    scrive principals.json (i tre utenti del sistema) dallo scenario
+  play <worlds/slug> <tappa>  rilascia una tappa nelle cartelle del sistema e carica gli utenti (principals) del mondo
                               (BRAIN_INBOX, BRAIN_NEWS, BRAIN_DOCS; default data/inbox, data/news, data/docs)
 `;
 
@@ -192,12 +193,23 @@ async function main(argv: string[]): Promise<number> {
       return 1;
     }
     const c = compile(readSpec(join(dir, SPEC_FILE)));
-    const errors = checkDir(c.world, dir);
+    const errors = [...checkDir(c.world, dir), ...checkPrincipals(c.spec, dir)];
     if (errors.length) {
       console.error(`Mondo non valido (${errors.length} problemi):\n  ${errors.join("\n  ")}`);
       return 1;
     }
     console.log(`Mondo valido: ${c.world.pieces.length} file in ${dir}`);
+    return 0;
+  }
+
+  if (cmd === "principals") {
+    const dir = resolve(a.pos[0] ?? "");
+    if (!a.pos[0] || !existsSync(join(dir, SPEC_FILE))) {
+      console.error(`Serve una cartella con ${SPEC_FILE}: principals worlds/<slug>`);
+      return 1;
+    }
+    const list = writeWorldPrincipals(dir);
+    console.log(`principals.json scritto: ${list.map((p) => `${p.name} (${p.role}${p.curator ? ", curatore" : ""})`).join("; ")}`);
     return 0;
   }
 
@@ -213,6 +225,8 @@ async function main(argv: string[]): Promise<number> {
       console.error(`Tappa sconosciuta: ${tier ?? "(nessuna)"}. Tappe di questo mondo: ${c.world.tiers.join(", ")}.`);
       return 1;
     }
+    const people = loadPrincipals(dir);
+    console.log(`Utenti del sistema: ${people.map((p) => `${p.name} (${p.role}${p.curator ? ", curatore" : ""})`).join("; ")}`);
     const written = playTier(tier, dir, defaultTargets());
     console.log(`Tappa ${tier}: ${written.length} file rilasciati`);
     for (const w of written) console.log(`  ${w}`);

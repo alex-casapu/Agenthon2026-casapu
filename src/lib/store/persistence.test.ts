@@ -1,11 +1,13 @@
+import { memDb } from "../testkit";
 import { mkdtempSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { getDb, insertSource, listClaims, listSources, openDb, submitClaim, verify, type DB } from ".";
+import { admitEntity, recordPrincipals, getDb, insertSource, listClaims, listEntities, listSources, openDb, seedEntities, submitClaim, verify, type DB } from ".";
 import { chainHash, GENESIS, rowPayloadHash } from "./log";
+import { DEMO_ENTITIES } from "../demo-entities";
 import { ENTITIES } from "../entities";
-import { PRINCIPALS } from "../policy";
+import { DEFAULT_PRINCIPALS } from "../policy";
 import { PREDICATES } from "../predicates";
 
 const tmpPath = () => join(mkdtempSync(join(tmpdir(), "brain-")), "sub", "brain.db");
@@ -69,7 +71,7 @@ describe("file-backed database", () => {
 
 describe("verify() beyond the hash chain", () => {
   it("catches a fabricated value even when the attacker rewrites the whole chain", () => {
-    const db = openDb(":memory:");
+    const db = memDb();
     const sid = insertSource(db, { kind: "email", external_id: "m1", occurred_at: "2026-10-12T09:00:00Z", raw: "the lot is €412 per tonne, valid until 31 December" }).source_id;
     const r = submitClaim(db, {
       predicate_id: "supplier_price",
@@ -89,7 +91,7 @@ describe("verify() beyond the hash chain", () => {
   });
 
   it("catches a quote that no longer matches its source", () => {
-    const db = openDb(":memory:");
+    const db = memDb();
     const sid = insertSource(db, { kind: "chat", external_id: "c1", occurred_at: "2026-10-12T09:00:00Z", raw: "we ship on 2026-11-03 for sure" }).source_id;
     submitClaim(db, {
       predicate_id: "commitment",
@@ -104,7 +106,7 @@ describe("verify() beyond the hash chain", () => {
   });
 
   it("catches a source whose text no longer matches its id", () => {
-    const db = openDb(":memory:");
+    const db = memDb();
     insertSource(db, { kind: "doc", external_id: "d1", occurred_at: "2026-10-12T09:00:00Z", raw: "original text" });
     db.exec("DROP TRIGGER sources_no_update");
     db.exec("UPDATE sources SET raw = 'forged', canonical_text = 'forged'");
@@ -113,61 +115,59 @@ describe("verify() beyond the hash chain", () => {
   });
 
   it("reports a clean empty database as ok", () => {
-    expect(verify(openDb(":memory:"))).toMatchObject({ ok: true, problems: [] });
+    expect(verify(memDb())).toMatchObject({ ok: true, problems: [] });
   });
 });
 
 describe("registries", () => {
-  it("records principals and entities append-only and hash-chained", () => {
+  it("records principals append-only and hash-chained, and starts with no entities", () => {
     const db = openDb(":memory:");
-    expect((db.prepare("SELECT COUNT(*) AS n FROM principals").get() as { n: number }).n).toBe(PRINCIPALS.length);
+    expect((db.prepare("SELECT COUNT(*) AS n FROM principals").get() as { n: number }).n).toBe(DEFAULT_PRINCIPALS.length);
     expect((db.prepare("SELECT COUNT(*) AS n FROM entities").get() as { n: number }).n).toBe(ENTITIES.length);
+    seedEntities(db, DEMO_ENTITIES);
     expect(() => db.prepare("DELETE FROM entities").run()).toThrow(/append-only/);
     expect(() => db.prepare("UPDATE principals SET version = 2").run()).toThrow(/append-only/);
     expect(verify(db)).toMatchObject({ ok: true, problems: [] });
   });
 
-  it("refuses to start when a principal or an entity changed without a version bump", () => {
-    const path = tmpPath();
-    openDb(path).close();
-    const p = PRINCIPALS[1];
-    const was = p.clearances;
-    p.clearances = [...was, "hr"];
-    try {
-      expect(() => openDb(path)).toThrow(/Principal luca v1 changed without a version bump/);
-    } finally {
-      p.clearances = was;
-    }
-    const e = ENTITIES[0];
-    const name = e.name;
-    e.name = name + " (renamed)";
-    try {
-      expect(() => openDb(path)).toThrow(/Entity ent:pastaco v1 changed without a version bump/);
-    } finally {
-      e.name = name;
-    }
+  it("a changed principal is a new, logged version, not an error and not a silent overwrite", () => {
+    const db = openDb(":memory:");
+    const before = (db.prepare("SELECT COUNT(*) AS n FROM principals").get() as { n: number }).n;
+    const changed = DEFAULT_PRINCIPALS.map((p) => (p.id === "luca" ? { ...p, clearances: [...p.clearances, "hr"] } : p));
+    recordPrincipals(db, changed);
+    recordPrincipals(db, changed); // unchanged: nothing more is written
+    expect((db.prepare("SELECT COUNT(*) AS n FROM principals").get() as { n: number }).n).toBe(before + 1);
+    expect(db.prepare("SELECT version FROM principals WHERE principal_id = 'luca' ORDER BY version").all()).toEqual([{ version: 1 }, { version: 2 }]);
+    expect(verify(db)).toMatchObject({ ok: true, problems: [] });
   });
 
-  it("submitClaim enforces the registry; verify tolerates claims admitted before an entity was removed", () => {
+  it("discovered entities survive a restart and are not mistaken for tampering", () => {
+    const path = tmpPath();
+    const a = openDb(path);
+    const sid = insertSource(a, { kind: "email", external_id: "m1", occurred_at: "2026-10-12T09:00:00Z", raw: "Offerta di Molino Nuovo: 412 €/t, valida fino al 31 dicembre" }).source_id;
+    expect(admitEntity(a, { name: "Molino Nuovo", kind: "organization", quote: "Offerta di Molino Nuovo" }, sid)).toMatchObject({ ok: true, created: true });
+    a.close();
+    const b = openDb(path);
+    expect(listEntities(b).map((e) => e.id)).toContain("ent:molino_nuovo");
+    expect(verify(b)).toMatchObject({ ok: true, problems: [] });
+  });
+
+  it("submitClaim needs known entities; a discovered one makes the claim admissible; verify never applies the rule", () => {
     const db = openDb(":memory:");
-    const sid = insertSource(db, { kind: "email", external_id: "m1", occurred_at: "2026-10-12T09:00:00Z", raw: "il lotto è a 412 €/t, valido fino al 31 dicembre" }).source_id;
+    const sid = insertSource(db, { kind: "email", external_id: "m1", occurred_at: "2026-10-12T09:00:00Z", raw: "Molino Nuovo: il lotto è a 412 €/t, valido fino al 31 dicembre" }).source_id;
     const claim = (supplier: string) => ({
       predicate_id: "supplier_price",
-      evidence: [{ source_id: sid, quote: "è a 412 €/t" }],
+      evidence: [{ source_id: sid, quote: "il lotto è a 412 €/t" }],
       fields: { supplier, item: "ent:durum_semolina", amount: 412, currency: "EUR", per: "t" },
     });
-    const bad = submitClaim(db, claim("ent:nobody"));
+    const bad = submitClaim(db, claim("ent:molino_nuovo"));
     expect(bad).toMatchObject({ ok: false });
-    if (!bad.ok) expect(bad.errors[0].code).toBe("unknown_entity");
+    if (!bad.ok) expect(bad.errors.map((e) => e.code)).toEqual(expect.arrayContaining(["unknown_entity"]));
     expect(listClaims(db)).toHaveLength(0);
 
-    // admit a claim for an entity that is later dropped from the registry
-    ENTITIES.push({ id: "ent:temporary", version: 1, name: "Temporary", kind: "organization", aliases: [] });
-    try {
-      expect(submitClaim(db, claim("ent:temporary")).ok).toBe(true);
-    } finally {
-      ENTITIES.pop();
-    }
+    seedEntities(db, DEMO_ENTITIES);
+    expect(admitEntity(db, { name: "Molino Nuovo", kind: "organization", quote: "Molino Nuovo: il lotto" }, sid).ok).toBe(true);
+    expect(submitClaim(db, claim("ent:molino_nuovo")).ok).toBe(true);
     expect(verify(db)).toMatchObject({ ok: true, problems: [] });
   });
 });

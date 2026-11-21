@@ -1,9 +1,10 @@
+import { memDb } from "../testkit";
 import { describe, expect, it } from "vitest";
-import { insertSource, listClaims, openDb, submitClaim } from "../store";
+import { insertSource, listClaims, listEntities, submitClaim } from "../store";
 import { flattenClaim, matches, scoreSource } from "./eval";
 
 const setup = () => {
-  const db = openDb(":memory:");
+  const db = memDb();
   const sid = insertSource(db, { kind: "news", external_id: "n", occurred_at: "2026-11-21T07:00:00Z", raw: "Il prezzo spot della semola è salito a 502 €/t, +18% in tre settimane, valida fino al 31 dicembre." }).source_id;
   submitClaim(db, {
     predicate_id: "spot_price",
@@ -58,5 +59,26 @@ describe("eval scoring", () => {
     expect(s).toMatchObject({ expected: 1, found: 1 });
     expect(s.extras).toHaveLength(0);
     expect(scoreSource(claims, { expect: [{ anyOf: [{ predicate: "demand" }, { predicate: "commitment" }] }] }).found).toBe(0);
+  });
+
+  it("scores entity fields by name through the registry: any acceptable name, aliases and legal forms included", () => {
+    const db = memDb();
+    const sid = insertSource(db, { kind: "email", external_id: "e", occurred_at: "2026-10-12T07:15:00Z", raw: "Molino Rossi: la semola è a 412 €/t." }).source_id;
+    submitClaim(db, { predicate_id: "supplier_price", fields: { supplier: "ent:molino_rossi", item: "ent:durum_semolina", amount: 412, currency: "EUR", per: "t" }, evidence: [{ source_id: sid, quote: "la semola è a 412 €/t" }] });
+    const claims = listClaims(db);
+    const entities = listEntities(db);
+    const ok = (fields: Record<string, unknown>) => scoreSource(claims, { expect: [{ predicate: "supplier_price", fields }] }, entities).found === 1;
+
+    expect(ok({ supplier: "Molino Rossi" })).toBe(true);
+    expect(ok({ supplier: "molino rossi s.r.l." })).toBe(true);
+    expect(ok({ supplier: ["Molino Bianchi", "Molino Rossi"] })).toBe(true);
+    expect(ok({ item: ["Semola di grano duro", "Durum semolina"] })).toBe(true); // an alias and the name
+    expect(ok({ supplier: "Molino Bianchi" })).toBe(false);
+    expect(ok({ supplier: ["Molino Bianchi", "Mulino Alta Murgia"] })).toBe(false);
+    expect(ok({ supplier: "Molino Rossi", amount: 412 })).toBe(true);
+    expect(ok({ supplier: "Molino Rossi", amount: 413 })).toBe(false); // non-entity fields are still exact
+    // without a registry it falls back to comparing ids
+    expect(scoreSource(claims, { expect: [{ predicate: "supplier_price", fields: { supplier: "ent:molino_rossi" } }] }).found).toBe(1);
+    expect(scoreSource(claims, { expect: [{ predicate: "supplier_price", fields: { supplier: "Molino Rossi" } }] }).found).toBe(0);
   });
 });

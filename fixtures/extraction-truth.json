@@ -1,5 +1,5 @@
 {
-  "note": "What a good extractor should find in examples/**. 'fields' are compared exactly against the claim's slots; 'quoteIncludes' matches any quote of the claim; 'anyOf' accepts alternatives. One claim may satisfy several expectations. 'allow' lists acceptable extras; 'forbid' lists claims that must NOT be extracted from that source.",
+  "note": "What a good extractor should find in examples/**. 'fields' are compared exactly against the claim's slots; 'quoteIncludes' matches any quote of the claim; 'anyOf' accepts alternatives. One claim may satisfy several expectations. 'allow' lists acceptable extras; 'forbid' lists claims that must NOT be extracted from that source. Entity fields are names (or arrays of acceptable names), compared through the discovered registry.",
   "sources": {
     "msg-2026-10-12-rossi-0915": {
       "expect": [
@@ -11,8 +11,16 @@
             "per": "t",
             "min_volume": 800,
             "valid_to": "2026-12-31",
-            "supplier": "ent:molino_rossi",
-            "item": "ent:durum_semolina"
+            "supplier": [
+              "Molino Rossi"
+            ],
+            "item": [
+              "Semola di grano duro",
+              "Semola",
+              "Durum semolina",
+              "Durum wheat semolina",
+              "Semola rimacinata di grano duro"
+            ]
           }
         }
       ]
@@ -27,8 +35,16 @@
             "per": "t",
             "min_volume": 500,
             "valid_to": "2027-01-15",
-            "supplier": "ent:molino_bianchi",
-            "item": "ent:durum_semolina"
+            "supplier": [
+              "Molino Bianchi"
+            ],
+            "item": [
+              "Semola di grano duro",
+              "Semola",
+              "Durum semolina",
+              "Durum wheat semolina",
+              "Semola rimacinata di grano duro"
+            ]
           }
         }
       ]
@@ -78,7 +94,13 @@
             "amount": 425,
             "currency": "EUR",
             "per": "t",
-            "item": "ent:durum_semolina"
+            "item": [
+              "Semola di grano duro",
+              "Semola",
+              "Durum semolina",
+              "Durum wheat semolina",
+              "Semola rimacinata di grano duro"
+            ]
           }
         }
       ]
@@ -92,7 +114,13 @@
             "currency": "EUR",
             "per": "t",
             "change_pct": 18,
-            "item": "ent:durum_semolina"
+            "item": [
+              "Semola di grano duro",
+              "Semola",
+              "Durum semolina",
+              "Durum wheat semolina",
+              "Semola rimacinata di grano duro"
+            ]
           }
         }
       ]
@@ -106,7 +134,13 @@
             "currency": "EUR",
             "per": "t",
             "change_pct": 12.5,
-            "item": "ent:durum_semolina"
+            "item": [
+              "Semola di grano duro",
+              "Semola",
+              "Durum semolina",
+              "Durum wheat semolina",
+              "Semola rimacinata di grano duro"
+            ]
           }
         },
         {
@@ -123,8 +157,18 @@
             "amount": 412,
             "currency": "EUR",
             "per": "t",
-            "supplier": "ent:molino_tavoliere",
-            "item": "ent:durum_semolina"
+            "supplier": [
+              "Molino Tavoliere",
+              "Molini del Tavoliere",
+              "Tavoliere"
+            ],
+            "item": [
+              "Semola di grano duro",
+              "Semola",
+              "Durum semolina",
+              "Durum wheat semolina",
+              "Semola rimacinata di grano duro"
+            ]
           }
         },
         {
@@ -148,8 +192,21 @@
           "fields": {
             "amount": 4000,
             "unit": "t",
-            "item": "ent:durum_semolina",
-            "site": "ent:parma_plant"
+            "item": [
+              "Semola di grano duro",
+              "Semola",
+              "Durum semolina",
+              "Durum wheat semolina",
+              "Semola rimacinata di grano duro"
+            ],
+            "site": [
+              "Parma",
+              "Stabilimento di Parma",
+              "Parma plant",
+              "Pastaco Parma",
+              "Magazzino Parma",
+              "Magazzino di Parma"
+            ]
           }
         }
       ]
@@ -161,8 +218,21 @@
           "fields": {
             "days": 9,
             "as_of": "2026-11-20",
-            "item": "ent:durum_semolina",
-            "site": "ent:parma_plant"
+            "item": [
+              "Semola di grano duro",
+              "Semola",
+              "Durum semolina",
+              "Durum wheat semolina",
+              "Semola rimacinata di grano duro"
+            ],
+            "site": [
+              "Parma",
+              "Stabilimento di Parma",
+              "Parma plant",
+              "Pastaco Parma",
+              "Magazzino Parma",
+              "Magazzino di Parma"
+            ]
           }
         }
       ],
@@ -171,7 +241,14 @@
           "predicate": "stock_coverage",
           "fields": {
             "days": 14,
-            "site": "ent:parma_plant"
+            "site": [
+              "Parma",
+              "Stabilimento di Parma",
+              "Parma plant",
+              "Pastaco Parma",
+              "Magazzino Parma",
+              "Magazzino di Parma"
+            ]
           }
         }
       ]
@@ -185,8 +262,18 @@
             "currency": "EUR",
             "per": "t",
             "volume": 800,
-            "supplier": "ent:molino_tavoliere",
-            "item": "ent:durum_semolina"
+            "supplier": [
+              "Molino Tavoliere",
+              "Molini del Tavoliere",
+              "Tavoliere"
+            ],
+            "item": [
+              "Semola di grano duro",
+              "Semola",
+              "Durum semolina",
+              "Durum wheat semolina",
+              "Semola rimacinata di grano duro"
+            ]
           }
         },
         {

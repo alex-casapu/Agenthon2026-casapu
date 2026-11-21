@@ -1,7 +1,9 @@
 import { sha256 } from "../hash";
 import type { Llm, LlmResponse } from "../llm";
+import { findEntity } from "../entities";
 import { latestPredicates } from "../predicates";
-import { submitClaim, type DB } from "../store";
+import { admitEntity, listEntities, submitClaim, type DB } from "../store";
+import type { EntityDeclaration } from "../store";
 import { EXTRACTOR_VERSION, SYSTEM_PROMPT, buildPrompt, buildRepairPrompt, buildSchema, vocabHash, type Feedback } from "./prompt";
 import { hasDoneRun, recordExtractionRun } from "./runs";
 
@@ -12,6 +14,8 @@ export interface ExtractOptions {
   maxRepairs?: number;
   /** Extract even if an up-to-date run exists. */
   force?: boolean;
+  /** Approve claims on admission (trust by default). Off: they wait for a curator. */
+  trust?: boolean;
   /** Restrict to these predicate ids (e.g. a targeted pass for a newly approved predicate). */
   predicates?: string[];
 }
@@ -24,6 +28,8 @@ export interface ExtractSummary {
   duplicates: number;
   rejected: number;
   claim_ids: string[];
+  /** Entities newly admitted from this source (discovered automatically). */
+  entities_created: number;
   error?: string;
   cost_usd?: number;
   duration_ms?: number;
@@ -36,17 +42,20 @@ interface RawClaim {
 }
 
 /** Pull the claims array out of a model response: structured output first, then JSON in the text. */
-export function parseClaims(res: LlmResponse): { ok: true; claims: unknown[] } | { ok: false; error: string } {
-  const fromObj = (o: unknown) => (o && typeof o === "object" && Array.isArray((o as { claims?: unknown }).claims) ? ((o as { claims: unknown[] }).claims) : null);
+export function parseClaims(res: LlmResponse): { ok: true; claims: unknown[]; entities: unknown[] } | { ok: false; error: string } {
+  const fromObj = (o: unknown) =>
+    o && typeof o === "object" && Array.isArray((o as { claims?: unknown }).claims)
+      ? { claims: (o as { claims: unknown[] }).claims, entities: Array.isArray((o as { entities?: unknown }).entities) ? ((o as { entities: unknown[] }).entities) : [] }
+      : null;
   const s = fromObj(res.structured);
-  if (s) return { ok: true, claims: s };
+  if (s) return { ok: true, ...s };
   const text = res.text.replace(/```(?:json)?/gi, "").trim();
   const a = text.indexOf("{");
   const b = text.lastIndexOf("}");
   if (a >= 0 && b > a) {
     try {
       const c = fromObj(JSON.parse(text.slice(a, b + 1)));
-      if (c) return { ok: true, claims: c };
+      if (c) return { ok: true, ...c };
     } catch {
       /* fall through */
     }
@@ -67,11 +76,12 @@ export async function extractSource(db: DB, sourceId: string, opts: ExtractOptio
   if (preds.length === 0) throw new Error("no predicates selected");
   const vocab = vocabHash(preds);
   if (!opts.force && hasDoneRun(db, sourceId, EXTRACTOR_VERSION, vocab))
-    return { source_id: sourceId, status: "skipped", rounds: 0, proposed: 0, duplicates: 0, rejected: 0, claim_ids: [] };
+    return { source_id: sourceId, status: "skipped", rounds: 0, proposed: 0, duplicates: 0, rejected: 0, claim_ids: [], entities_created: 0 };
 
   const basePrompt = buildPrompt(
     { kind: row.kind, external_id: row.external_id, occurred_at: row.occurred_at, author: row.author, meta: JSON.parse(row.meta), text: row.canonical_text },
     preds,
+    listEntities(db),
   );
   const schema = buildSchema(preds);
   const promptHash = sha256(opts.model + "\n" + SYSTEM_PROMPT + "\n" + basePrompt);
@@ -86,6 +96,7 @@ export async function extractSource(db: DB, sourceId: string, opts: ExtractOptio
   let rounds = 0;
   let parsedOnce = false;
   let dropped = 0; // rejected claims the model withdrew instead of fixing
+  const entityLog: { id: string; name: string; created: boolean }[] = [];
   let fatal: string | undefined;
   let feedback: Feedback[] = [];
   const claimIds: string[] = [];
@@ -116,6 +127,16 @@ export async function extractSource(db: DB, sourceId: string, opts: ExtractOptio
 
     const next: Feedback[] = [];
     let accepted = 0;
+
+    // 1. entities the model found: admitted automatically if grounded in a verbatim quote
+    for (const d of parsed.entities as EntityDeclaration[]) {
+      const r = admitEntity(db, d, sourceId);
+      if (r.ok) entityLog.push({ id: r.entity.id, name: r.entity.name, created: r.created });
+      else next.push({ claim: { entity: d }, errors: [r.error] });
+    }
+    const registry = listEntities(db);
+
+    // 2. claims, with entity names resolved to ids by code
     for (const c of parsed.claims as RawClaim[]) {
       const errs: string[] = [];
       if (typeof c?.predicate !== "string" || !known.has(c.predicate)) errs.push(`unknown predicate ${JSON.stringify(c?.predicate)}`);
@@ -126,15 +147,22 @@ export async function extractSource(db: DB, sourceId: string, opts: ExtractOptio
         next.push({ claim: c, errors: errs });
         continue;
       }
+      const def = preds.find((p) => p.id === c.predicate)!;
+      const fields: Record<string, unknown> = { ...(c.fields as Record<string, unknown>) };
+      for (const f of def.fields) {
+        const v = fields[f.name];
+        if (f.type === "entity" && typeof v === "string") fields[f.name] = findEntity(registry, v)?.id ?? v;
+      }
       const r = submitClaim(
         db,
         {
           predicate_id: c.predicate as string,
-          fields: c.fields as Record<string, unknown>,
+          fields,
           evidence: quotes.map((quote) => ({ source_id: sourceId, quote })),
           extractor: stamp,
         },
         "agent:extractor",
+        { trust: opts.trust },
       );
       if (r.ok) {
         accepted++;
@@ -164,11 +192,11 @@ export async function extractSource(db: DB, sourceId: string, opts: ExtractOptio
     proposed,
     duplicates,
     rejected: rejectedCount,
-    detail: { rounds: log, withdrawn: dropped, rejected: stillRejected.map((f) => ({ claim: f.claim, errors: f.errors })), predicates: preds.map((p) => `${p.id}@${p.version}`) },
+    detail: { rounds: log, withdrawn: dropped, entities: entityLog, rejected: stillRejected.map((f) => ({ claim: f.claim, errors: f.errors })), predicates: preds.map((p) => `${p.id}@${p.version}`) },
     error: error ?? null,
     cost_usd: cost || null,
     duration_ms,
   });
 
-  return { source_id: sourceId, status, rounds, proposed, duplicates, rejected: rejectedCount, claim_ids: claimIds, error, cost_usd: cost || undefined, duration_ms };
+  return { source_id: sourceId, status, rounds, proposed, duplicates, rejected: rejectedCount, claim_ids: claimIds, entities_created: entityLog.filter((e) => e.created).length, error, cost_usd: cost || undefined, duration_ms };
 }

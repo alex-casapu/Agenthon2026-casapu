@@ -1,5 +1,6 @@
+import { memDb } from "../testkit";
 import { beforeEach, describe, expect, it } from "vitest";
-import { insertSource, listClaims, openDb, type DB } from "../store";
+import { insertSource, listClaims, type DB } from "../store";
 import { reply, scriptedLlm } from "./fake-llm";
 import { createExtractionQueue } from "./queue";
 import { extractSource } from "./extract";
@@ -8,7 +9,7 @@ const text = (n: number) => `Il prezzo della semola numero ${n} è 41${n} €/t,
 let db: DB;
 let ids: string[];
 beforeEach(() => {
-  db = openDb(":memory:");
+  db = memDb();
   ids = [1, 2, 3, 4].map((n) => insertSource(db, { kind: "email", external_id: `m${n}`, occurred_at: "2026-10-12T07:15:00Z", raw: text(n) }).source_id);
 });
 

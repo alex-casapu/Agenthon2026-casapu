@@ -6,11 +6,11 @@ import { Avatar, BrainMark, KindIcon, QuestionIcon, ShieldIcon } from "./ui";
 
 export type Msg = { id: string; role: "user" | "assistant"; content: string; answer?: AnswerResult; error?: string };
 
-export function UserMessage({ m, who }: { m: Msg; who: string }) {
+export function UserMessage({ m, who, name }: { m: Msg; who: string; name: string }) {
   return (
     <div className="msg user">
       <div className="bubble">{m.content}</div>
-      <Avatar id={who} size={32} />
+      <Avatar id={who} name={name} size={32} />
     </div>
   );
 }
@@ -57,7 +57,7 @@ export function AssistantMessage({ m, onAsk }: { m: Msg; onAsk: (q: string) => v
             <span className="idk-ico"><QuestionIcon /></span>
             <div>
               <div className="idk-title">I don&apos;t know.</div>
-              <div className="idk-sub">Nothing in the approved knowledge available to you answers this.</div>
+              <div className="idk-sub">Nothing in the knowledge available to you answers this.</div>
             </div>
           </div>
         )}
@@ -97,8 +97,8 @@ export function AssistantMessage({ m, onAsk }: { m: Msg; onAsk: (q: string) => v
         {a && (
           <div className="msg-meta">
             {a.idk
-              ? `Looked at ${a.meta.knowledge} approved claim${a.meta.knowledge === 1 ? "" : "s"}`
-              : `From ${a.meta.knowledge} approved claim${a.meta.knowledge === 1 ? "" : "s"} you can see`}
+              ? `Looked at ${a.meta.knowledge} claim${a.meta.knowledge === 1 ? "" : "s"}`
+              : `From ${a.meta.knowledge} claim${a.meta.knowledge === 1 ? "" : "s"} you can see`}
             {a.meta.dropped > 0 && ` · ${a.meta.dropped} statement${a.meta.dropped === 1 ? "" : "s"} removed: could not be verified`}
             {a.meta.llm_calls > 0 && ` · ${(a.meta.duration_ms / 1000).toFixed(1)}s`}
           </div>
