@@ -252,3 +252,12 @@
 .notice .x:hover { color: var(--ink); }
 .notice footer { display: flex; gap: 8px; margin-top: 8px; }
 .notice .src-grid { margin-top: 10px; }
+
+/* a notice whose basis was rejected: kept, visibly withdrawn, never silently removed */
+.notice.cancelled, .notice.updated { border-color: color-mix(in srgb, #ef4444 40%, var(--line)); }
+.notice.cancelled::before, .notice.updated::before { background: #ef4444; }
+.notice.cancelled .answer { opacity: 0.6; }
+.notice .seg.struck { text-decoration: line-through; opacity: 0.55; }
+.notice .pill.gone { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: #b42318; background: color-mix(in srgb, #ef4444 13%, transparent); }
+@media (prefers-color-scheme: dark) { .notice .pill.gone { color: #fca5a5; } }
+.notice .withdrawn { margin-top: 8px; padding: 9px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; background: color-mix(in srgb, #ef4444 8%, var(--panel)); }

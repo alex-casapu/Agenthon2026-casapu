@@ -203,11 +203,60 @@ function recordNotice(db: DB, n: Omit<NoticeRow, "created_at">): NoticeRow | nul
 }
 
 /** What the person has been told (newest first), with whether they have dismissed each. */
-export function listNotices(db: DB, principalId: string, limit = 30): (NoticeRow & { seen: boolean })[] {
+export function listNotices(db: DB, principalId: string, limit = 30): (NoticeRow & { seen: boolean; seen_at: string | null })[] {
   const rows = db
-    .prepare("SELECT n.*, (s.notice_id IS NOT NULL) AS seen FROM notices n LEFT JOIN notice_seen s USING (notice_id) WHERE n.principal_id = ? AND n.decision = 'notify' ORDER BY n.created_at DESC, n.rowid DESC LIMIT ?")
+    .prepare("SELECT n.*, (s.notice_id IS NOT NULL) AS seen, s.seen_at FROM notices n LEFT JOIN notice_seen s USING (notice_id) WHERE n.principal_id = ? AND n.decision = 'notify' ORDER BY n.created_at DESC, n.rowid DESC LIMIT ?")
     .all(principalId, limit) as Record<string, unknown>[];
-  return rows.map((r) => ({ ...rowOf(r), seen: !!r.seen }));
+  return rows.map((r) => ({ ...rowOf(r), seen: !!r.seen, seen_at: (r.seen_at as string | null) ?? null }));
+}
+
+// ---------------------------------------------------------------- when what it relied on is withdrawn
+
+export interface Withdrawn {
+  claim_id: string;
+  sentence: string;
+  status: string;
+  /** Who withdrew it (the actor of the event) and why. */
+  by: string;
+  reason: string | null;
+  at: string;
+}
+
+export interface NoticeState {
+  /** ok: nothing it rests on was withdrawn. updated: some statements lost their basis. cancelled: all of them did. */
+  state: "ok" | "updated" | "cancelled";
+  withdrawn: Withdrawn[];
+  /** Per statement: true when every claim it cites was withdrawn. */
+  segment_withdrawn: boolean[];
+  /** When the latest withdrawal happened, if any. */
+  changed_at: string | null;
+}
+
+const WITHDRAWN = new Set(["rejected", "retracted"]);
+
+/**
+ * A notice is never edited or deleted. Whether it still stands is derived from the claims it cites: a
+ * claim a curator rejected (or retracted) takes its statements with it. This is computed on every read,
+ * so it is always current and needs no write.
+ */
+export function noticeState(notice: Pick<NoticeRow, "segments">, views: Map<string, ClaimView>): NoticeState {
+  const segs = notice.segments ?? [];
+  const gone = new Map<string, Withdrawn>();
+  for (const id of new Set(segs.flatMap((s) => s.cites))) {
+    const c = views.get(id);
+    if (!c || !WITHDRAWN.has(c.status)) continue;
+    const ev = [...c.history].reverse().find((h) => WITHDRAWN.has(h.type));
+    gone.set(id, { claim_id: id, sentence: c.sentence, status: c.status, by: ev?.actor ?? "unknown", reason: ev?.reason ?? null, at: ev?.created_at ?? "" });
+  }
+  const segment_withdrawn = segs.map((s) => s.cites.length > 0 && s.cites.every((id) => gone.has(id)));
+  const n = segment_withdrawn.filter(Boolean).length;
+  const withdrawn = [...gone.values()];
+  return {
+    state: n === 0 ? "ok" : n === segs.length ? "cancelled" : "updated",
+    withdrawn: n === 0 ? [] : withdrawn,
+    segment_withdrawn,
+    changed_at: withdrawn.map((w) => w.at).sort().pop() ?? null,
+  };
 }
 
 /** Every decision, including the skips, for the debug view. */
@@ -217,7 +266,7 @@ export function listDecisions(db: DB, limit = 100): NoticeRow[] {
 
 export function markSeen(db: DB, principalId: string, ids: string[]): number {
   let n = 0;
-  const q = db.prepare("INSERT OR IGNORE INTO notice_seen (notice_id, seen_at) SELECT notice_id, ? FROM notices WHERE notice_id = ? AND principal_id = ?");
+  const q = db.prepare("INSERT INTO notice_seen (notice_id, seen_at) SELECT notice_id, ? FROM notices WHERE notice_id = ? AND principal_id = ? ON CONFLICT(notice_id) DO UPDATE SET seen_at = excluded.seen_at");
   for (const id of ids) n += q.run(new Date().toISOString(), id, principalId).changes;
   return n;
 }

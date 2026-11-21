@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { scriptedLlm } from "../extract/fake-llm";
 import type { LlmResponse } from "../llm";
 import { getPrincipal } from "../policy-config";
-import { insertSource, submitClaim, verify, type DB } from "../store";
+import { listClaimViews } from "../claims-view";
+import { insertSource, reviewClaim, submitClaim, verify, type DB } from "../store";
 import { memDb } from "../testkit";
-import { considerClaims, isParticipant, listDecisions, listNotices, markSeen } from ".";
+import { considerClaims, isParticipant, listDecisions, listNotices, markSeen, noticeState } from ".";
 
 const marta = getPrincipal("marta")!;
 const luca = getPrincipal("luca")!;
@@ -162,5 +163,53 @@ describe("storage", () => {
     expect(markSeen(w.db, "sara", [id])).toBe(0);
     expect(markSeen(w.db, "luca", [id])).toBe(1);
     expect(listNotices(w.db, "luca")[0].seen).toBe(true);
+  });
+});
+
+describe("when a claim behind a notice is rejected", () => {
+  const views = (db: DB) => new Map(listClaimViews(db).map((c) => [c.claim_id, c]));
+  const tell = (text: (req: { prompt: string }) => { text: string; cites: string[] }[]) => (req: { prompt: string }) => reply({ notify: true, topic: "Semola", segments: text(req) });
+
+  it("is cancelled, with who and why, and the notice itself is kept", async () => {
+    const w = world();
+    await considerClaims(w.db, w.source, [w.claim], opts(scriptedLlm([tell((r) => [{ text: "La semola è a 502 €/t.", cites: [cites(r.prompt, "N")] }]), () => reply({ notify: false, segments: [] })]).llm, [luca, sara]));
+    const [n] = listNotices(w.db, "luca");
+    expect(noticeState(n, views(w.db))).toMatchObject({ state: "ok", withdrawn: [] });
+
+    reviewClaim(w.db, w.claim, "rejected", "human:marta", "wrong figure");
+    const st = noticeState(listNotices(w.db, "luca")[0], views(w.db));
+    expect(st.state).toBe("cancelled");
+    expect(st.withdrawn).toMatchObject([{ claim_id: w.claim, status: "rejected", by: "human:marta", reason: "wrong figure" }]);
+    expect(st.segment_withdrawn).toEqual([true]);
+    expect(listNotices(w.db, "luca")).toHaveLength(1); // never deleted
+  });
+
+  it("is only updated when some statements still stand on other claims", async () => {
+    const w = world();
+    const r2 = submitClaim(w.db, { predicate_id: "spot_price", fields: { item: "ent:durum_semolina", amount: 502, currency: "EUR", per: "t" }, evidence: [{ source_id: w.source, quote: "salito a 502 €/t" }] }, "agent:test", { trust: true });
+    expect(r2.ok).toBe(true);
+    const second = (r2 as { claim_id: string }).claim_id;
+    const both = (req: { prompt: string }) => {
+      const hs = [...req.prompt.matchAll(/\[(N\d+)\]/g)].map((m) => m[1]);
+      return [{ text: "La semola è a 502 €/t.", cites: [hs[0]] }, { text: "Il prezzo spot è 502 €/t.", cites: [hs[1]] }];
+    };
+    await considerClaims(w.db, w.source, [w.claim, second], opts(scriptedLlm([tell(both)]).llm, [luca]));
+    const n = listNotices(w.db, "luca")[0];
+    expect(n.segments).toHaveLength(2);
+    reviewClaim(w.db, n.segments![0].cites[0], "rejected", "human:marta");
+    const st = noticeState(listNotices(w.db, "luca")[0], views(w.db));
+    expect(st.state).toBe("updated");
+    expect(st.segment_withdrawn).toEqual([true, false]);
+  });
+
+  it("a dismissed notice can be dismissed again after it is cancelled", async () => {
+    const w = world();
+    await considerClaims(w.db, w.source, [w.claim], opts(scriptedLlm([tell((r) => [{ text: "La semola è a 502 €/t.", cites: [cites(r.prompt, "N")] }])]).llm, [luca]));
+    const id = listNotices(w.db, "luca")[0].notice_id;
+    markSeen(w.db, "luca", [id]);
+    const before = listNotices(w.db, "luca")[0].seen_at!;
+    await new Promise((r) => setTimeout(r, 5));
+    markSeen(w.db, "luca", [id]);
+    expect(listNotices(w.db, "luca")[0].seen_at! > before).toBe(true);
   });
 });
