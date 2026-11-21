@@ -64,8 +64,8 @@ export const SLIDES: Slide[] = [
   { slug: "math", title: "The maths", act: "Backup", steps: 3, backup: true, notes: ["Where the numbers come from."] },
   { slug: "rooms", title: "Rooms, with the Brain's voice", act: "Backup", steps: 4, backup: true, notes: ["The voice scene (ElevenLabs), if there is time."] },
   { slug: "impact", title: "What it is worth", act: "Backup", steps: 1, backup: true, notes: ["The numbers, from the mock story."] },
-  { slug: "ideas", title: "Six ideas, all running", act: "Backup · Ideas", steps: 1, backup: true,
-    notes: ["For questions on the technology. Walk the six: quote-checked claims, the hash chain, access before the model, verified answers, automatic entities, proactive per person. Then the trust-by-default line."] },
+  { slug: "ideas", title: "Three ideas worth stealing", act: "Backup · Ideas", steps: 2, backup: true,
+    notes: ["For questions on the technology. One at a time: atomic claims with evidence and the interpretation fenced to one tier; the immutable store that can be regenerated, with policy applied at read time; the deterministic gate. Be straight that cascading recompute is not built yet."] },
   { slug: "scope", title: "Real, staged, missing", act: "Backup · Scope", steps: 2, backup: true,
     notes: ["Be straight about it. Green: the live app. Amber: slides 6-11 are a scripted engine. Red: derived claims, real proposals, recompute, connectors, login."] },
 ];
