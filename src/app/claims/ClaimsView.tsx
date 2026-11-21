@@ -3,9 +3,13 @@
 import { useEffect, useState } from "react";
 import type { ClaimView, EvidenceView } from "@/lib/claims-view";
 import { Highlighted } from "../components/Highlighted";
+import { PrincipalSwitcher, usePrincipalId } from "../components/principal";
 
 type GroupBy = "none" | "predicate" | "source";
 type Sort = "newest" | "oldest" | "predicate" | "status";
+
+type Who = { id: string; name: string; role: string; clearances: string[]; curator: boolean } | null;
+type Payload = { principal: Who; total: number; claims: ClaimView[] };
 
 const STATUSES = ["proposed", "approved", "rejected", "superseded", "retracted"];
 const short = (id: string) => id.slice(0, 8);
@@ -45,12 +49,14 @@ function Evidence({ e }: { e: EvidenceView }) {
   );
 }
 
-function Card({ c }: { c: ClaimView }) {
+function Card({ c, curate, onReview }: { c: ClaimView; curate: boolean; onReview: (type: "approved" | "rejected" | "retracted") => void }) {
   return (
     <article className="card cl">
       <header className="clhead">
         <span className={`chip status-${c.status}`}>{c.status}</span>
         <span className="chip">{c.predicate_id}@{c.predicate_version}</span>
+        {c.labels.map((l) => <span key={l} className="chip" title="visibility label from the sources">{l}</span>)}
+        <span className="muted small" title="roles allowed to see this claim">sees: {c.visible_to.join(", ") || "nobody"}</span>
         <span className="muted mono" title={c.claim_id}>{short(c.claim_id)}</span>
       </header>
       <h3 className="sentence">{c.sentence}</h3>
@@ -76,6 +82,15 @@ function Card({ c }: { c: ClaimView }) {
         {c.extractor && c.extractor.type === "manual" && <span>entered manually</span>}
         {(c.valid_from || c.valid_to) && <span>valid {c.valid_from ?? "…"} → {c.valid_to ?? "…"}</span>}
       </footer>
+      {curate && c.status === "proposed" && (
+        <div className="row" style={{ marginTop: 8 }}>
+          <button className="ok" onClick={() => onReview("approved")}>Approve</button>
+          <button className="bad" onClick={() => onReview("rejected")}>Reject</button>
+        </div>
+      )}
+      {curate && c.status === "approved" && (
+        <div className="row" style={{ marginTop: 8 }}><button onClick={() => onReview("retracted")}>Retract</button></div>
+      )}
       <details>
         <summary>raw</summary>
         <pre className="rawjson">{JSON.stringify({ claim_id: c.claim_id, ...c.raw, extractor: c.extractor }, null, 2)}</pre>
@@ -85,7 +100,9 @@ function Card({ c }: { c: ClaimView }) {
 }
 
 export default function ClaimsView() {
-  const [claims, setClaims] = useState<ClaimView[] | null>(null);
+  const pid = usePrincipalId();
+  const [data, setData] = useState<{ key: string; payload: Payload } | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [live, setLive] = useState(true);
   const [statuses, setStatuses] = useState<string[]>([]);
@@ -97,9 +114,9 @@ export default function ClaimsView() {
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/debug/claims").then((r) => r.json()).then((d) => { if (alive) setClaims(d); });
+    fetch("/api/debug/claims").then((r) => r.json()).then((d: Payload) => { if (alive) setData({ key: pid, payload: d }); });
     return () => { alive = false; };
-  }, [tick]);
+  }, [tick, pid]);
 
   useEffect(() => {
     if (!live) return;
@@ -107,7 +124,15 @@ export default function ClaimsView() {
     return () => clearInterval(t);
   }, [live]);
 
-  if (!claims) return <p className="muted" style={{ padding: 16 }}>Loading…</p>;
+  if (!data || data.key !== pid) return <p className="muted" style={{ padding: 16 }}>Loading…</p>;
+  const { principal, total, claims } = data.payload;
+
+  async function review(id: string, type: "approved" | "rejected" | "retracted") {
+    const r = await fetch(`/api/claims/${id}/review`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type }) });
+    const d = await r.json();
+    setMsg(r.ok ? null : d.error ?? "refused");
+    setTick((n) => n + 1);
+  }
 
   const counts = Object.fromEntries(STATUSES.map((s) => [s, claims.filter((c) => c.status === s).length]));
   const predicates = [...new Set(claims.map((c) => c.predicate_id))].sort();
@@ -126,6 +151,16 @@ export default function ClaimsView() {
       : a.status.localeCompare(b.status) || b.created_at.localeCompare(a.created_at),
     );
 
+  const proposedShown = shown.filter((c) => c.status === "proposed");
+  async function approveShown() {
+    if (!window.confirm(`Approve ${proposedShown.length} claim${proposedShown.length === 1 ? "" : "s"} as ${principal?.name}?`)) return;
+    for (const c of proposedShown) {
+      const r = await fetch(`/api/claims/${c.claim_id}/review`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "approved" }) });
+      if (!r.ok) { setMsg((await r.json()).error ?? "refused"); break; }
+    }
+    setTick((n) => n + 1);
+  }
+
   const groups = new Map<string, ClaimView[]>();
   for (const c of shown) {
     const key = group === "predicate" ? c.predicate_id : group === "source" ? (c.evidence[0]?.source.title ?? c.evidence[0]?.source.external_id ?? "(no source)") : "";
@@ -134,6 +169,18 @@ export default function ClaimsView() {
 
   return (
     <div className="claimspage">
+      <div className="banner">
+        <PrincipalSwitcher />
+        {principal ? (
+          <span className="small">
+            <strong>{principal.name}</strong> · {principal.role} · clearances: <code className="mono">{principal.clearances.join(", ")}</code> · <strong>{claims.length} of {total}</strong> claims visible
+            {principal.curator ? " · can approve and reject" : " · read-only"}
+          </span>
+        ) : (
+          <span className="small muted">God mode: every claim, no filtering. Pick a curator (Marta) to approve or reject.</span>
+        )}
+      </div>
+      {msg && <p className="note">{msg}</p>}
       <div className="claimbar">
         {STATUSES.map((s) => (
           <button key={s} className={`chip status-${s}${statuses.includes(s) ? " on" : ""}`} onClick={() => setStatuses((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]))}>
@@ -162,12 +209,15 @@ export default function ClaimsView() {
         </select>
         <label className="small muted"><input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} style={{ width: "auto" }} /> live</label>
         <span className="muted small">{shown.length} of {claims.length}</span>
+        {principal?.curator && proposedShown.length > 0 && (
+          <button className="ok" onClick={approveShown} title="Approve every proposed claim currently shown (respects the filters)">Approve {proposedShown.length} shown</button>
+        )}
       </div>
 
       {[...groups.entries()].map(([key, list]) => (
         <section key={key}>
           {group !== "none" && <h2 className="grouphead">{key} <span className="muted">({list.length})</span></h2>}
-          {list.map((c) => <Card key={c.claim_id} c={c} />)}
+          {list.map((c) => <Card key={c.claim_id} c={c} curate={!!principal?.curator} onReview={(t) => review(c.claim_id, t)} />)}
         </section>
       ))}
       {shown.length === 0 && <p className="muted">No claims match.{claims.length === 0 ? " Ingest a source or load the sample data from the Workbench." : ""}</p>}

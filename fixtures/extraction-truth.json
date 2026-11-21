@@ -10,7 +10,9 @@
             "currency": "EUR",
             "per": "t",
             "min_volume": 800,
-            "valid_to": "2026-12-31"
+            "valid_to": "2026-12-31",
+            "supplier": "ent:molino_rossi",
+            "item": "ent:durum_semolina"
           }
         }
       ]
@@ -24,7 +26,9 @@
             "currency": "EUR",
             "per": "t",
             "min_volume": 500,
-            "valid_to": "2027-01-15"
+            "valid_to": "2027-01-15",
+            "supplier": "ent:molino_bianchi",
+            "item": "ent:durum_semolina"
           }
         }
       ]
@@ -73,7 +77,8 @@
           "fields": {
             "amount": 425,
             "currency": "EUR",
-            "per": "t"
+            "per": "t",
+            "item": "ent:durum_semolina"
           }
         }
       ]
@@ -86,7 +91,8 @@
             "amount": 502,
             "currency": "EUR",
             "per": "t",
-            "change_pct": 18
+            "change_pct": 18,
+            "item": "ent:durum_semolina"
           }
         }
       ]
@@ -99,7 +105,8 @@
             "amount": 478,
             "currency": "EUR",
             "per": "t",
-            "change_pct": 12.5
+            "change_pct": 12.5,
+            "item": "ent:durum_semolina"
           }
         },
         {
@@ -115,7 +122,9 @@
           "fields": {
             "amount": 412,
             "currency": "EUR",
-            "per": "t"
+            "per": "t",
+            "supplier": "ent:molino_tavoliere",
+            "item": "ent:durum_semolina"
           }
         },
         {
@@ -138,7 +147,9 @@
           "predicate": "demand",
           "fields": {
             "amount": 4000,
-            "unit": "t"
+            "unit": "t",
+            "item": "ent:durum_semolina",
+            "site": "ent:parma_plant"
           }
         }
       ]
@@ -149,7 +160,9 @@
           "predicate": "stock_coverage",
           "fields": {
             "days": 9,
-            "as_of": "2026-11-20"
+            "as_of": "2026-11-20",
+            "item": "ent:durum_semolina",
+            "site": "ent:parma_plant"
           }
         }
       ],
@@ -157,7 +170,8 @@
         {
           "predicate": "stock_coverage",
           "fields": {
-            "days": 14
+            "days": 14,
+            "site": "ent:parma_plant"
           }
         }
       ]
@@ -170,7 +184,9 @@
             "amount": 412,
             "currency": "EUR",
             "per": "t",
-            "volume": 800
+            "volume": 800,
+            "supplier": "ent:molino_tavoliere",
+            "item": "ent:durum_semolina"
           }
         },
         {

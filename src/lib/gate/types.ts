@@ -42,7 +42,8 @@ export interface GateError {
     | "unexpected_field"
     | "bad_type"
     | "literal_not_in_quote"
-    | "resolved_mismatch";
+    | "resolved_mismatch"
+    | "unknown_entity";
   field?: string;
   message: string;
 }

@@ -144,3 +144,45 @@ describe("checkClaim", () => {
     expect(r.ok).toBe(true);
   });
 });
+
+describe("entity registry in the gate", () => {
+  const text = "Il lotto di semola è a 412 €/t, valida fino al 31 dicembre.";
+  const src: Record<string, { canonical_text: string; occurred_at: string }> = { s1: { canonical_text: text, occurred_at: "2026-10-12T07:15:00Z" } };
+  const get = (id: string) => src[id];
+  const input = (over: Record<string, unknown> = {}) => ({
+    predicate_id: "supplier_price",
+    evidence: [{ source_id: "s1", quote: "è a 412 €/t" }],
+    fields: { supplier: "ent:molino_rossi", item: "ent:durum_semolina", amount: 412, currency: "EUR", per: "t", ...over },
+  });
+
+  it("accepts registry ids", () => {
+    expect(checkClaim(input(), get, { entities: true }).ok).toBe(true);
+  });
+
+  it("rejects an unknown entity with the closest known ids, per field", () => {
+    const r = checkClaim(input({ supplier: "ent:fornitore_semola", item: "ent:made_up_thing" }), get, { entities: true });
+    if (r.ok) throw new Error("expected rejection");
+    expect(r.errors.map((e) => e.field).sort()).toEqual(["item", "supplier"]);
+    const supplier = r.errors.find((e) => e.field === "supplier")!;
+    expect(supplier.code).toBe("unknown_entity");
+    expect(supplier.message).toMatch(/not in the entity registry \(closest: .*ent:durum_semolina/);
+    expect(supplier.message).toMatch(/leave the claim out/);
+  });
+
+  it("checks optional entity fields too, but not plain text fields", () => {
+    const c = {
+      predicate_id: "commitment",
+      evidence: [{ source_id: "s1", quote: "è a 412 €/t" }],
+      fields: { owner: "ent:pastaco", counterparty: "ent:unknown_party", action: "chiunque / anything at all" },
+    };
+    const r = checkClaim(c, get, { entities: true });
+    if (r.ok) throw new Error("expected rejection");
+    expect(r.errors).toHaveLength(1);
+    expect(r.errors[0]).toMatchObject({ code: "unknown_entity", field: "counterparty" });
+  });
+
+  it("does not apply to an audit: without the option, unknown ids pass (claims admitted before the registry)", () => {
+    expect(checkClaim(input({ supplier: "ent:fornitore_semola" }), get).ok).toBe(true);
+    expect(checkClaim(input({ supplier: "ent:fornitore_semola" }), get, { entities: false }).ok).toBe(true);
+  });
+});

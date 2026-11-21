@@ -49,10 +49,11 @@ TypeScript end to end · Next.js (web is the UI) · SQLite via `better-sqlite3` 
 | News source contract (`docs/NEWS_CONTRACT.md`): same mechanics, `domain` as unit of source trust, `corrects` link | done |
 | Document source contract (`docs/DOCUMENT_CONTRACT.md`): contracts, invoices, reports, exports; `doc_type`, `supersedes` versioning, tables citable per row | done |
 | LLM extraction: one Claude CLI call per source over the whole vocabulary, every claim through the gate, rejects repaired (2 rounds), auto-queued on ingest, run ledger, record/replay cache, live eval vs ground truth | done |
+| Policy (`src/lib/policy.ts`): principals (Marta/Purchasing curator, Luca/Finance, Sara/Production), clearances, claim labels = join of its sources' labels, role switcher (cookie), server-enforced curation, non-interference test | done |
+| Entity registry (`src/lib/entities.ts`): seeded, append-only, offered to the extractor, enforced by the gate on admission | done |
+| Chat (`/chat`) and answering (`src/lib/answer/`): per-identity chat with Claude over approved claims the role may see; citations numbered and verified (every cite exists and is visible, no figure that the cited claims lack), one repair round, otherwise "I don't know" | done |
 | `/claims` page: claims as plain-language sentences with tier-coloured fields, quotes in context, source details, history and extractor; filters, search, grouping, live refresh | done |
 | Test suite: gate, store, tamper evidence, API routes, debug lib (~95% statements) | done |
-| Entity registry | next |
-| Policy + access labels, non-interference test | next |
 | Derivation engine, "distrust source" blast radius | next |
 | Triggers → proactive briefs (web, Slack-style mock, morning email) | next |
 | Answering with citation verifier and "I don't know" | next |
@@ -74,7 +75,10 @@ src/lib/store/     DB, hash chain, migrations runner, verify
 src/lib/predicates.ts   predicate vocabulary (versioned)
 src/app/           Next.js UI and API routes
 src/app/debug/     god-mode debug GUI (add a page: new entry in src/app/nav.tsx)
-src/app/claims/    human-friendly claims page
+src/app/chat/      chat UI (identity cards, citations, sources)
+src/lib/answer/    knowledge gate, prompt, verifier, answering
+src/app/claims/    human-friendly claims page, role switcher, curation (approve / reject / retract)
+src/lib/policy.ts, entities.ts   who may see what; what claims are about
 docs/              scenario, source contracts (email, news, document), design docs
 examples/          example emails, news, documents (`npm run inbox:example` copies them into data/inbox, data/news, data/docs)
 src/lib/ingest/    email, news, document parsers, shared front-matter code, kind registry, folder ingest, watcher
@@ -100,3 +104,10 @@ npm run eval:extract   # live extraction eval against fixtures/extraction-truth.
 | `BRAIN_LLM_MODE` | `auto` | `auto` replay-or-call-and-record · `live` always call · `replay` recorded responses only (offline demo) |
 | `BRAIN_LLM_CACHE` | `data/llm-cache` | where responses are recorded |
 | `BRAIN_EXTRACT_CONCURRENCY` | 2 | parallel extractions |
+
+## Decisions worth knowing
+
+- **One abstention message.** Every "no" is "I don't know": missing data, nothing approved, and data the asker may not see all read the same, so refusals never reveal that hidden data exists.
+- **Access is a pure function** of (principal, claim labels). Labels are the union over every source a claim rests on; one restricted source makes the claim restricted. No model is involved.
+- **Identity is a demo cookie** (`brain_principal`, set by the role switcher). There is no login; the server applies policy to whoever is named. Curation actors come from the principal, never from the request body.
+- **Entity ids are enforced at admission** (gate), not at audit, so `verify()` still passes claims admitted before an entity existed. Changing the registry changes the vocabulary hash, which queues re-extraction.

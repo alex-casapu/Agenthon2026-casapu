@@ -1,3 +1,4 @@
+import { getEntity, suggestEntities } from "../entities";
 import { sha256, canonicalJson } from "../hash";
 import { getPredicate } from "../predicates";
 import { dateCandidates } from "./dates";
@@ -43,8 +44,20 @@ function typeError(f: FieldDef, v: unknown): string | null {
  * resolved: a deterministic resolver re-derives it from quote + source metadata.
  * interpretive: shape only; a human curator reviews the interpretation.
  */
-function groundField(f: FieldDef, v: unknown, quotes: Located[]): { grounding: FieldGrounding } | { error: GateError } {
-  if (f.tier === "interpretive") return { grounding: { tier: "interpretive" } };
+function groundField(f: FieldDef, v: unknown, quotes: Located[], strictEntities: boolean): { grounding: FieldGrounding } | { error: GateError } {
+  if (f.tier === "interpretive") {
+    if (strictEntities && f.type === "entity" && !getEntity(v as string)) {
+      const near = suggestEntities(v as string).map((x) => x.id);
+      return {
+        error: {
+          code: "unknown_entity",
+          field: f.name,
+          message: `${JSON.stringify(v)} is not in the entity registry${near.length ? ` (closest: ${near.join(", ")})` : ""}; use a listed id, or leave the claim out if the entity is not listed`,
+        },
+      };
+    }
+    return { grounding: { tier: "interpretive" } };
+  }
 
   const find = (test: (q: Located) => boolean) => quotes.find(test);
 
@@ -89,7 +102,16 @@ function groundField(f: FieldDef, v: unknown, quotes: Located[]): { grounding: F
 }
 
 /** The gate: pure, no LLM, no DB. Everything a claim asserts is checked against its quotes. */
-export function checkClaim(input: GateInput, getSource: (id: string) => SourceView | undefined): GateResult {
+export interface GateOptions {
+  /**
+   * Require entity fields to be ids in the registry. A rule for what may be
+   * admitted, not evidence grounding, so a later audit (verify) does not apply it
+   * to claims admitted before the registry existed.
+   */
+  entities?: boolean;
+}
+
+export function checkClaim(input: GateInput, getSource: (id: string) => SourceView | undefined, opts: GateOptions = {}): GateResult {
   const errors: GateError[] = [];
 
   const pred = getPredicate(input.predicate_id, input.predicate_version);
@@ -142,7 +164,7 @@ export function checkClaim(input: GateInput, getSource: (id: string) => SourceVi
       errors.push({ code: "bad_type", field: f.name, message: `${f.name} ${te}` });
       continue;
     }
-    const g = groundField(f, v, quotes);
+    const g = groundField(f, v, quotes, !!opts.entities);
     if ("error" in g) {
       errors.push(g.error);
       continue;

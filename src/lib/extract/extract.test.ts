@@ -4,6 +4,7 @@ import { extractSource, parseClaims } from "./extract";
 import { reply, scriptedLlm } from "./fake-llm";
 import { EXTRACTOR_VERSION, buildPrompt, buildSchema, vocabHash } from "./prompt";
 import { latestPredicates } from "../predicates";
+import { ENTITIES } from "../entities";
 
 const TEXT = "Buongiorno,\n\ncome da telefonata, la semola di grano duro è a 412 €/t, valida fino al 31 dicembre, ordine minimo 800 tonnellate.\n\nCordiali saluti\n";
 const QUOTE = "la semola di grano duro è a 412 €/t, valida fino al 31 dicembre, ordine minimo 800 tonnellate";
@@ -186,5 +187,44 @@ describe("vocabulary hash", () => {
     expect(vocabHash(all)).toBe(vocabHash([...all]));
     expect(vocabHash(all)).not.toBe(vocabHash(all.slice(1)));
     expect(buildPrompt({ kind: "news", external_id: "n", occurred_at: "2026-01-01T00:00:00Z", author: null, meta: { domain: "x.example", title: "T" }, text: "a" }, all)).toContain("Publisher: x.example");
+  });
+});
+
+describe("entity registry in extraction", () => {
+  it("offers the registry in the prompt and the vocabulary hash depends on it", async () => {
+    const { llm, calls } = scriptedLlm([reply([])]);
+    await extractSource(db, sid, opts(llm));
+    const p = calls[0].prompt;
+    expect(p).toContain("# Known entities");
+    expect(p).toContain("ent:molino_rossi: Molino Rossi S.r.l.");
+    expect(p).toContain("ent:parma_plant");
+    expect(calls[0].system).toContain("ONLY ids from the \"Known entities\" list");
+    const preds = latestPredicates();
+    expect(vocabHash(preds)).toBe(vocabHash(preds, ENTITIES));
+    expect(vocabHash(preds, ENTITIES.slice(1))).not.toBe(vocabHash(preds));
+  });
+
+  it("tells the model about document parties and reference so it can resolve a supplier the quote does not name", async () => {
+    const doc = insertSource(db, { kind: "document", external_id: "CQ-1", occurred_at: "2026-01-15T00:00:00Z", raw: "Il prezzo è fissato in 412 €/t.", meta: { title: "Contratto", doc_type: "contract", reference: "CQ-2026-031", parties: ["Pastaco S.p.A.", "Molino Tavoliere S.r.l."] } }).source_id;
+    const { llm, calls } = scriptedLlm([reply([])]);
+    await extractSource(db, doc, opts(llm));
+    expect(calls[0].prompt).toContain("Parties: Pastaco S.p.A.; Molino Tavoliere S.r.l.");
+    expect(calls[0].prompt).toContain("Reference: CQ-2026-031");
+  });
+
+  it("an invented entity is rejected with suggestions, and repaired to a registry id", async () => {
+    const { llm, calls } = scriptedLlm([reply([good({ supplier: "ent:fornitore_semola" })]), reply([good()])]);
+    const s = await extractSource(db, sid, opts(llm));
+    expect(s).toMatchObject({ status: "done", rounds: 2, proposed: 1, rejected: 0 });
+    expect(calls[1].prompt).toContain("not in the entity registry");
+    expect(calls[1].prompt).toContain("ent:durum_semolina");
+    expect(listClaims(db)[0].subject).toMatchObject({ supplier: "ent:molino_rossi" });
+  });
+
+  it("a claim whose entity cannot be resolved is left out, and recorded as rejected", async () => {
+    const { llm } = scriptedLlm([reply([good({ supplier: "ent:fornitore_semola" })]), reply([])]);
+    const s = await extractSource(db, sid, opts(llm));
+    expect(s).toMatchObject({ proposed: 0, rejected: 1 });
+    expect(listClaims(db)).toHaveLength(0);
   });
 });

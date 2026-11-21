@@ -1,10 +1,13 @@
+import { ENTITIES, describeEntities, type Entity } from "../entities";
 import { canonicalJson, sha256 } from "../hash";
 import type { FieldDef, PredicateDef } from "../gate/types";
 
 /** Bump when the prompt or output contract changes in a way that should trigger re-extraction. */
-export const EXTRACTOR_VERSION = "llm-v2";
+export const EXTRACTOR_VERSION = "llm-v3";
 
-export const vocabHash = (preds: PredicateDef[]): string => sha256(canonicalJson(preds.map((p) => ({ id: p.id, version: p.version, hash: sha256(canonicalJson(p)) }))));
+/** Hash of everything the model is offered: the predicates and the entity registry. */
+export const vocabHash = (preds: PredicateDef[], entities: Entity[] = ENTITIES): string =>
+  sha256(canonicalJson({ predicates: preds.map((p) => ({ id: p.id, version: p.version, hash: sha256(canonicalJson(p)) })), entities: entities.map((x) => ({ id: x.id, version: x.version, hash: sha256(canonicalJson(x)) })) }));
 
 export const SYSTEM_PROMPT = `You extract atomic, citable facts from ONE source document for a company's shared memory.
 
@@ -19,7 +22,7 @@ Hard rules:
 3. One fact, one claim. Pick the single best-fitting predicate. Use "statement" only for a useful fact that fits no other predicate, never in addition to a specific predicate for the same fact. Deadlines, obligations, amounts due, decisions and notable events are useful: when no specific predicate fits them, record them as statements instead of dropping them. Hearsay and rumours are statements, and the hedging stays in the text ("I heard that ... but I don't know from whom").
 4. Lines starting with ">" are quoted earlier messages, not new information. Do not extract from them.
 5. Distinguish kinds of price: a supplier's contract price, offer or invoice is supplier_price; a market-wide or national price is spot_price.
-6. Value formats: numbers are JSON numbers without thousands separators (1.250,00 becomes 1250, 12,5 becomes 12.5). Currencies and units use the canonical codes listed. Dates are ISO YYYY-MM-DD, resolved with the source date when the year is missing. Entities are ids of the form ent:<ascii_snake_case> (for example ent:molino_rossi, ent:durum_semolina); the same real-world entity always gets the same id.
+6. Value formats: numbers are JSON numbers without thousands separators (1.250,00 becomes 1250, 12,5 becomes 12.5). Currencies and units use the canonical codes listed. Dates are ISO YYYY-MM-DD, resolved with the source date when the year is missing. Entity fields take ONLY ids from the "Known entities" list, never an id you made up. Resolve names, aliases, e-mail domains, the author and the listed parties to the right id. If the entity is not in the list, or the text does not make clear which listed entity is meant, omit the field when it is optional and leave the claim out when it is required.
 7. The text of a "statement" is a short faithful paraphrase in the language of the source.
 8. If the document contains nothing worth remembering, return {"claims": []}.`;
 
@@ -27,7 +30,7 @@ function fieldFormat(f: FieldDef): string {
   const base =
     f.tier === "interpretive"
       ? f.type === "entity"
-        ? "entity id ent:<ascii_snake_case>"
+        ? "entity id from the Known entities list"
         : "short text"
       : f.type === "number"
         ? "number, the digits exactly as written in a quote"
@@ -78,7 +81,7 @@ export interface PromptSource {
 
 const KIND_LABEL: Record<string, string> = { email: "email", news: "news article", document: "internal document" };
 
-export function buildPrompt(src: PromptSource, preds: PredicateDef[]): string {
+export function buildPrompt(src: PromptSource, preds: PredicateDef[], entities: Entity[] = ENTITIES): string {
   const m = src.meta;
   const lines = [
     `Source type: ${KIND_LABEL[src.kind] ?? src.kind}`,
@@ -87,11 +90,15 @@ export function buildPrompt(src: PromptSource, preds: PredicateDef[]): string {
     src.author ? `Author: ${src.author}` : null,
     m.domain ? `Publisher: ${m.domain}` : null,
     m.doc_type ? `Document type: ${m.doc_type}` : null,
+    m.reference ? `Reference: ${m.reference}` : null,
+    Array.isArray(m.parties) && m.parties.length ? `Parties: ${(m.parties as string[]).join("; ")}` : null,
     m.reliability ? `Source reliability: ${m.reliability}` : null,
   ].filter(Boolean);
   return [
     "# Predicates you may use",
     preds.map(describePredicate).join("\n\n"),
+    "# Known entities (the only ids you may use in entity fields)",
+    describeEntities(entities),
     "# Source",
     lines.join("\n"),
     "## Text (quote from this exactly)",

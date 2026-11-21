@@ -67,7 +67,7 @@ describe("listClaimViews", () => {
     expect(e.text).toContain("1.250,00");
     expect(e.before).toContain("Buongiorno");
     expect(e.after).toContain("Cordiali saluti");
-    expect(e.source).toMatchObject({ kind: "email", external_id: "sample-it-1", author: "luca@molinobianchi.example", occurred_at: "2026-11-03T08:40:00Z", labels: [] });
+    expect(e.source).toMatchObject({ kind: "email", external_id: "sample-it-1", author: "luca@molinobianchi.example", occurred_at: "2026-11-03T08:40:00Z", labels: ["public"] });
     expect(it.extractor).toEqual({ type: "manual" });
     expect(it.history).toMatchObject([{ type: "proposed", actor: "human:manual" }]);
     expect(it.raw.grounding).toBeTruthy();

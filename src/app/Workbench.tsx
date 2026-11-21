@@ -111,7 +111,8 @@ export default function Workbench() {
   }
 
   async function review(id: string, type: "approved" | "rejected" | "retracted") {
-    await post(`/api/claims/${id}/review`, { type });
+    const { status, data } = await post(`/api/claims/${id}/review`, { type });
+    setNote(status === 200 ? null : data.error ?? "review refused");
     load();
   }
 

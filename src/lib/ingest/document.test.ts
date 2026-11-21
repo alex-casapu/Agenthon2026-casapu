@@ -200,7 +200,7 @@ describe("document ingest", () => {
     const price = submitClaim(db, {
       predicate_id: "supplier_price",
       evidence: [{ source_id: contract.source_id, quote: "è fissato in 412 €/t" }],
-      fields: { supplier: "ent:molino_tavoliere", item: "ent:semola", amount: 412, currency: "EUR", per: "t" },
+      fields: { supplier: "ent:molino_tavoliere", item: "ent:durum_semolina", amount: 412, currency: "EUR", per: "t" },
     });
     expect(price.ok).toBe(true);
     const inv = listSources(db).find((s) => s.external_id === "INV-8841")!;

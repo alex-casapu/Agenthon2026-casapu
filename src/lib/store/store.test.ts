@@ -12,7 +12,7 @@ let sourceId: string;
 const priceInput = (sid: string) => ({
   predicate_id: "supplier_price",
   evidence: [{ source_id: sid, quote: "durum semolina is €412 per tonne, valid until 31 December" }],
-  fields: { supplier: "ent:rossi", item: "ent:semolina", amount: 412, currency: "EUR", per: "t", valid_to: "2026-12-31" },
+  fields: { supplier: "ent:molino_rossi", item: "ent:durum_semolina", amount: 412, currency: "EUR", per: "t", valid_to: "2026-12-31" },
 });
 
 beforeEach(() => {
@@ -79,7 +79,7 @@ describe("store", () => {
     const r = submitClaim(db, {
       predicate_id: "commitment",
       evidence: [{ source_id: sid, quote: "we commit to ship pallets on 2026-11-03" }],
-      fields: { owner: "ent:us", action: "ship pallets", due: "2026-11-03" },
+      fields: { owner: "ent:pastaco", action: "ship pallets", due: "2026-11-03" },
     });
     expect(r.ok).toBe(true);
     expect(verify(db).ok).toBe(true);

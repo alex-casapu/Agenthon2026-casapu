@@ -34,3 +34,8 @@ export function numberCandidates(text: string): Set<number> {
   for (const m of text.matchAll(TOKEN_RE)) for (const n of tokenCandidates(m[0])) out.add(n);
   return out;
 }
+
+/** Each number in the text with all its plausible readings (one array per token). */
+export function numberTokens(text: string): number[][] {
+  return [...text.matchAll(TOKEN_RE)].map((m) => tokenCandidates(m[0]));
+}

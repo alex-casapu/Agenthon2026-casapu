@@ -209,7 +209,7 @@ describe("ingest", () => {
     const r = submitClaim(db, {
       predicate_id: "supplier_price",
       evidence: [{ source_id: src.source_id, quote: "la semola è a 412 €/t, valida fino al 31 dicembre" }],
-      fields: { supplier: "ent:mill", item: "ent:semola", amount: 412, currency: "EUR", per: "t", valid_to: "2026-12-31" },
+      fields: { supplier: "ent:molino_rossi", item: "ent:durum_semolina", amount: 412, currency: "EUR", per: "t", valid_to: "2026-12-31" },
     });
     expect(r.ok).toBe(true);
     expect(listClaims(db)).toHaveLength(1);

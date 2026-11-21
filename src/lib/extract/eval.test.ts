@@ -8,7 +8,7 @@ const setup = () => {
   submitClaim(db, {
     predicate_id: "spot_price",
     evidence: [{ source_id: sid, quote: "salito a 502 €/t, +18% in tre settimane" }],
-    fields: { item: "ent:semola", amount: 502, currency: "EUR", per: "t", change_pct: 18 },
+    fields: { item: "ent:durum_semolina", amount: 502, currency: "EUR", per: "t", change_pct: 18 },
   });
   submitClaim(db, { predicate_id: "statement", evidence: [{ source_id: sid, quote: "valida fino al 31 dicembre" }], fields: { text: "Validità fino al 31 dicembre." } });
   return listClaims(db);
@@ -17,7 +17,7 @@ const setup = () => {
 describe("eval scoring", () => {
   it("flattens slots back into named fields", () => {
     const spot = setup().find((c) => c.predicate_id === "spot_price")!;
-    expect(flattenClaim(spot)).toMatchObject({ item: "ent:semola", amount: 502, currency: "EUR", per: "t", change_pct: 18 });
+    expect(flattenClaim(spot)).toMatchObject({ item: "ent:durum_semolina", amount: 502, currency: "EUR", per: "t", change_pct: 18 });
   });
 
   it("matches on predicate, exact fields and quote text", () => {

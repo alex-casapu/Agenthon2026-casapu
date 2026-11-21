@@ -1,4 +1,5 @@
 import { cpLength, cpSlice } from "./canon";
+import { PRINCIPALS, canSee, type Principal } from "./policy";
 import { PREDICATES } from "./predicates";
 import type { DB } from "./store/log";
 
@@ -43,6 +44,10 @@ export interface ClaimView {
   predicate_version: number;
   status: string;
   sentence: string;
+  /** Union of the labels of every source this claim rests on. */
+  labels: string[];
+  /** Ids of the principals allowed to see it. */
+  visible_to: string[];
   fields: FieldView[];
   valid_from: string | null;
   valid_to: string | null;
@@ -165,6 +170,8 @@ export function listClaimViews(db: DB): ClaimView[] {
     }
     if (!def) for (const [k, v] of Object.entries({ ...subject, ...value, ...conditions })) flat[k] = v;
 
+    const labels = [...new Set((evidence.get(c.claim_id as string) ?? []).flatMap((e) => e.source.labels))].sort();
+
     let extractor: Record<string, unknown> | null = null;
     try {
       extractor = JSON.parse(c.extractor as string);
@@ -178,6 +185,8 @@ export function listClaimViews(db: DB): ClaimView[] {
       predicate_version: c.predicate_version as number,
       status: c.status as string,
       sentence: sentenceFor(c.predicate_id as string, flat),
+      labels,
+      visible_to: PRINCIPALS.filter((p) => canSee(p, labels)).map((p) => p.id),
       fields,
       valid_from: c.valid_from as string | null,
       valid_to: c.valid_to as string | null,
@@ -188,4 +197,17 @@ export function listClaimViews(db: DB): ClaimView[] {
       raw: { subject, value, conditions, grounding },
     };
   });
+}
+
+/** Only the claims a principal may see. null = god mode (no filtering). */
+export function visibleTo(views: ClaimView[], principal: Principal | null): ClaimView[] {
+  return principal ? views.filter((c) => canSee(principal, c.labels)) : views;
+}
+
+/** Labels of one claim, from its sources. Empty for an unknown claim. */
+export function claimLabels(db: DB, claimId: string): string[] {
+  const rows = db
+    .prepare("SELECT s.acl_labels FROM claim_evidence e JOIN quotes q USING (quote_id) JOIN sources s ON s.source_id = q.source_id WHERE e.claim_id = ?")
+    .all(claimId) as { acl_labels: string }[];
+  return [...new Set(rows.flatMap((r) => JSON.parse(r.acl_labels) as string[]))].sort();
 }

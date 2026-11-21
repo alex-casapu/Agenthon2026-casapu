@@ -4,6 +4,8 @@ import { dirname, join } from "node:path";
 import { CANON_VERSION, canonicalize, cpSlice } from "../canon";
 import { checkClaim, type GateError, type GateInput, type SourceView } from "../gate";
 import { canonicalJson, sha256 } from "../hash";
+import { ENTITIES } from "../entities";
+import { PRINCIPALS } from "../policy";
 import { PREDICATES, getPredicate } from "../predicates";
 import { chainHash, GENESIS, recordRow, rowPayloadHash, type DB } from "./log";
 import { migrate } from "./migrate";
@@ -18,7 +20,7 @@ export function openDb(path: string, migrationsDir = join(process.cwd(), "migrat
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   migrate(db, migrationsDir);
-  ensurePredicates(db);
+  ensureDefinitions(db);
   return db;
 }
 
@@ -31,24 +33,37 @@ export function getDb(): DB {
 
 // ---------------------------------------------------------------- predicates
 
-function ensurePredicates(db: DB): void {
-  for (const def of PREDICATES) {
+/**
+ * Record versioned definitions (predicates, principals, entities) in their
+ * append-only table. A definition that changed without a version bump is an error.
+ */
+function ensureVersioned(db: DB, spec: { table: string; idCol: string; label: string; items: { id: string; version: number; def: unknown }[] }): void {
+  for (const { id, version, def } of spec.items) {
     const hash = sha256(canonicalJson(def));
     const row = db
-      .prepare("SELECT definition_hash FROM predicates WHERE predicate_id = ? AND version = ?")
-      .get(def.id, def.version) as { definition_hash: string } | undefined;
+      .prepare(`SELECT definition_hash FROM ${spec.table} WHERE ${spec.idCol} = ? AND version = ?`)
+      .get(id, version) as { definition_hash: string } | undefined;
     if (row) {
-      if (row.definition_hash !== hash)
-        throw new Error(`Predicate ${def.id} v${def.version} changed without a version bump`);
+      if (row.definition_hash !== hash) throw new Error(`${spec.label} ${id} v${version} changed without a version bump`);
       continue;
     }
     db.transaction(() => {
-      db.prepare(
-        "INSERT INTO predicates (predicate_id, version, definition, definition_hash, created_at) VALUES (?, ?, ?, ?, ?)",
-      ).run(def.id, def.version, canonicalJson(def), hash, new Date().toISOString());
-      recordRow(db, "predicates", `${def.id}:${def.version}`);
+      db.prepare(`INSERT INTO ${spec.table} (${spec.idCol}, version, definition, definition_hash, created_at) VALUES (?, ?, ?, ?, ?)`).run(
+        id,
+        version,
+        canonicalJson(def),
+        hash,
+        new Date().toISOString(),
+      );
+      recordRow(db, spec.table, `${id}:${version}`);
     })();
   }
+}
+
+function ensureDefinitions(db: DB): void {
+  ensureVersioned(db, { table: "predicates", idCol: "predicate_id", label: "Predicate", items: PREDICATES.map((d) => ({ id: d.id, version: d.version, def: d })) });
+  ensureVersioned(db, { table: "principals", idCol: "principal_id", label: "Principal", items: PRINCIPALS.map((d) => ({ id: d.id, version: 1, def: d })) });
+  ensureVersioned(db, { table: "entities", idCol: "entity_id", label: "Entity", items: ENTITIES.map((d) => ({ id: d.id, version: d.version, def: d })) });
 }
 
 // ---------------------------------------------------------------- sources
@@ -89,7 +104,7 @@ export function insertSource(db: DB, input: SourceInput): { source_id: string; c
       input.raw,
       canonical,
       CANON_VERSION,
-      canonicalJson(input.acl_labels ?? []),
+      canonicalJson(input.acl_labels ?? ["public"]), // same default as the source contracts
       canonicalJson(input.meta ?? {}),
       input.origin_source_id ?? null,
     );
@@ -138,7 +153,7 @@ export type SubmitResult =
 
 /** Gate, then persist quotes + claim + evidence + 'proposed' event atomically. */
 export function submitClaim(db: DB, input: GateInput, actor = "human:manual"): SubmitResult {
-  const res = checkClaim(input, (id) => sourceView(db, id));
+  const res = checkClaim(input, (id) => sourceView(db, id), { entities: true });
   if (!res.ok) return res;
   const d = res.draft;
 
@@ -311,7 +326,7 @@ export function verify(db: DB): VerifyReport {
       else if (now !== e.payload_hash) problems.push(`log #${e.seq}: row ${e.tbl}/${e.row_id} was altered`);
     }
   }
-  for (const tbl of ["sources", "quotes", "predicates", "claims", "claim_evidence", "claim_events", "ingest_events", "extraction_runs", "schema_migrations"]) {
+  for (const tbl of ["sources", "quotes", "predicates", "claims", "claim_evidence", "claim_events", "ingest_events", "extraction_runs", "principals", "entities", "schema_migrations"]) {
     const n = (db.prepare(`SELECT COUNT(*) AS n FROM ${tbl}`).get() as { n: number }).n;
     if (n !== (perTable.get(tbl) ?? 0)) problems.push(`${tbl}: ${n} rows but ${perTable.get(tbl) ?? 0} log entries`);
   }

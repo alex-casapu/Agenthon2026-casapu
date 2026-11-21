@@ -107,3 +107,9 @@ table.grid { border-collapse: collapse; width: 100%; font-family: var(--font-gei
 .clfoot { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); }
 .rawjson { margin: 6px 0 0; padding: 8px; background: var(--bg); border-radius: 6px; overflow: auto; font-size: 12px; }
 .cl details { margin: 6px 0 0; }
+
+/* ---- role switcher / banner ---- */
+.who { display: inline-flex; gap: 6px; align-items: center; }
+.who select { width: auto; padding: 3px 8px; }
+.banner { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 10px 0 2px; }
+.cl .row button.ok, .cl .row button.bad { padding: 3px 12px; }

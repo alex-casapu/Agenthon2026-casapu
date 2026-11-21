@@ -15,6 +15,8 @@ const ROW_SELECT: Record<string, string> = {
   claim_events: "SELECT * FROM claim_events WHERE seq = ?",
   ingest_events: "SELECT * FROM ingest_events WHERE seq = ?",
   extraction_runs: "SELECT * FROM extraction_runs WHERE seq = ?",
+  principals: "SELECT * FROM principals WHERE principal_id || ':' || version = ?",
+  entities: "SELECT * FROM entities WHERE entity_id || ':' || version = ?",
 };
 
 /** Hash of the stored row as it currently is. Same function on write and on verify. */
