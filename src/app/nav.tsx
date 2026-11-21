@@ -108,4 +108,16 @@ export const SLIDE_ICONS: Record<string, ReactNode> = {
       <path d="M12 7v5l3 2" />
     </>,
   ),
+  ideas: svg(
+    <>
+      <path d="M9 18h6M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z" />
+    </>,
+  ),
+  scope: svg(
+    <>
+      <path d="M9 11l3 3 8-8" />
+      <path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9" />
+    </>,
+  ),
 };
